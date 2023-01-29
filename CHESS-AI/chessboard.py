@@ -1,15 +1,14 @@
-import pygame
 
-pygame.init()
 
-WIDTH, HEIGHT = 1024, 1024
+class Board:
 
-window = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption('Chess')
-
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
+    # Board initializes with a variable, fen, which holds the fen string of the current board
+    # and a variable, board, which is a tuple with numbers 1-64
+    # used to calculate possible piece moves
+    def __init__(self, fen):
         
+        self.fen = fen
+        self.board = (i for i in range(1, 65))
+
+
 
