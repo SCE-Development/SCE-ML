@@ -35,6 +35,7 @@ class Board:
         }
 
 
+
     def appendBit2Bitboard(self, bitboard):
         return bitboard << 1 | 0b0
     
@@ -45,8 +46,16 @@ class Board:
                     self.bitboards[key] = self.bitboards[key] << 1 | 0b1
                 else:
                     self.bitboards[key] = self.bitboards[key] << 1
+    def pawnMoveGen(self):
+        pawnMoves = self.bitboards["p"] << 8 | self.bitboards["P"] >> 8
+        print(format(pawnMoves, "064b"))
 
 brd = Board()
 brd.board2Bitboard()
+
 for key in brd.bitboards.keys():
     print(key + ": " + format(brd.bitboards[key], "064b"))
+
+
+
+brd.pawnMoveGen()
