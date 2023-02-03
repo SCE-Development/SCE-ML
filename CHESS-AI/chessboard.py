@@ -45,7 +45,6 @@ class Board:
         }
 
 
-
     def appendBit2Bitboard(self, bitboard):
         return bitboard << 1 | 0b0
     
@@ -81,13 +80,16 @@ class Board:
         else:
             return file + "8"
 
-    def pieceBitboard(self, index):
+    def index2Bitboard(self, index):
         return 0b1 << index
 
+    def bitboard2Index(self, bitboard):
+        return (bitboard & -bitboard).bit_length()-1
 
 brd = Board()
 brd.board2Bitboard()
 print(brd.getFileRank(8))
+print(brd.bitboard2Index(brd.index2Bitboard(8)))
 
 for key in brd.bitboards.keys():
     print(key + ": " + format(brd.bitboards[key], "064b"))
