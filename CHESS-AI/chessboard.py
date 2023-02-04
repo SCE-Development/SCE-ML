@@ -63,22 +63,7 @@ class Board:
     
     def getFileRank(self, index):
         file = self.fileDict[str(index % 8)]
-        if index < 8:
-            return file + "1"
-        elif index < 16:
-            return file + "2"
-        elif index < 24:
-            return file + "3"
-        elif index < 32:
-            return file + "4"
-        elif index < 40:
-            return file + "5"
-        elif index < 48:
-            return file + "6"
-        elif index < 56:
-            return file + "7"
-        else:
-            return file + "8"
+        return file + str((index//8) + 1)
 
     def index2Bitboard(self, index):
         return 0b1 << index
@@ -88,7 +73,7 @@ class Board:
 
 brd = Board()
 brd.board2Bitboard()
-print(brd.getFileRank(8))
+print(brd.getFileRank(63))
 print(brd.bitboard2Index(brd.index2Bitboard(8)))
 
 for key in brd.bitboards.keys():
