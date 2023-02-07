@@ -29,6 +29,7 @@ class Board:
         )
 
         self.fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+
         self.board = [
             "R", "N", "B", "K", "Q", "B", "N", "R",
             "P", "P", "P", "P", "P", "P", "P", "P", 
@@ -56,13 +57,12 @@ class Board:
         }
 
 
-    def appendBit2Bitboard(self, bitboard):
-        return bitboard << 1 | 0b0
-    
-
     # function that takes the current board of the Board object and generates piece bitboards in the bitboards dictionary
     def board2Bitboard(self):
+        # iterates over board
         for piece in self.board:
+            # iterates of the keys of bitboards dictionary, if the piece == key, then a 1 bit is appended to the piece bitboard
+            # otherwise the piece bitboard is shifted 1 to the left (append a 0 bit)
             for key in self.bitboards.keys():
                 if piece == key:
                     self.bitboards[key] = self.bitboards[key] << 1 | 0b1
@@ -84,21 +84,29 @@ class Board:
     def bitboard2Index(self, bitboard):
         return (bitboard & -bitboard).bit_length()-1
     
+    # takes a FEN string and assigns it to the fen of the Board
+    # also populates the board variable of Board according to the given FEN string
     def fen2Board(self, fen):
         self.fen = fen
+
+        # splits given FEN string by whitespaces into a list
         fenList = self.fen.split()
+        
+        # fills board with "."
         self.board = ["." for i in range(64)]
+
         boardIndex = 0
         fenIndex = 0
         while fenIndex < len(fenList[0]):
+            # fenList[0] contains only the board representation portion of the FEN string
             fenCurr = fenList[0][fenIndex]
-            if fenCurr.isalpha():
+            if fenCurr.isalpha():                   # checks to see if fenCurr is a letter
                 self.board[boardIndex] = fenCurr
                 fenIndex += 1
                 boardIndex += 1
-            elif fenCurr == '/':
+            elif fenCurr == '/':                    # increments fenIndex if fenCurr is "/"
                 fenIndex += 1
-            else:
+            else:                                   # fenCurr is a number so fenCurr amount of squares are skipped
                 fenIndex += 1
                 boardIndex += int(fenCurr)
 
@@ -107,10 +115,11 @@ class Board:
             print(self.board[i], end=' ')
             if i % 8 == 0:
                 print()
+
+
 ########################################
 brd = Board()
 brd2 = Board()
 #brd.board2Bitboard()
 #brd.fen2Board("bbrknqnr/pppppppp/8/8/8/8/PPPPPPPP/BBRKNQNR w KQkq - 0 1")
 brd.printBoard()
-print(brd.bitboard2Index(0b1000000))
