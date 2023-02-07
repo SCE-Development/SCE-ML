@@ -85,7 +85,6 @@ class Board:
             else:
                 fenIndex += 1
                 boardIndex += int(fenCurr)
-        print(self.board)
 
 brd = Board()
 brd.board2Bitboard()
