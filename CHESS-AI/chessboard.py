@@ -86,7 +86,13 @@ class Board:
                 fenIndex += 1
                 boardIndex += int(fenCurr)
 
+    def printBoard(self):
+        for i in range(63, -1, -1):
+            print(self.board[i], end=' ')
+            if i % 8 == 0:
+                print()
+
 brd = Board()
 brd.board2Bitboard()
-
-brd.fen2Board("bbrknqnr/pppppppp/8/8/8/8/PPPPPPPP/BBRKNQNR w KQkq - 0 1")
+#brd.fen2Board("bbrknqnr/pppppppp/8/8/8/8/PPPPPPPP/BBRKNQNR w KQkq - 0 1")
+brd.printBoard()
