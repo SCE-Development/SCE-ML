@@ -2,11 +2,21 @@
 
 class Board:
 
-    # Board initializes with a variable, fen, which holds the fen string of the current board
-    # and a variable, board, which is a tuple with numbers 1-64
-    # used to calculate possible piece moves
+    # Board initializes with instance variables fen, board and bitboard. There is also a fileRank
+    # which is used to help get the file rank mapping of a piece in the board // see getFileRank()
+    # Each board is represented in three ways: board, fen, and bitboards.
+    # (Board) A list of length 64 which contains information for the pieces on each
+    # square of the board. Uppercase letters denote WHITE, lowercase denotes BLACK and "." denotes nothing.
+    # (FEN) A fen string.
+    # (Bitboards) Bitboards are used to represent sets of pieces. These sets can represents a number of different
+    # types of squares (pieces, attacked squares, possible moves, pieces blocking sliding pieces, etc) and can be
+    # manipulated efficientyly using set operations such as AND/OR. Piece bitboards are represented in a dictionary
+    # called bitboards that takes characters from the board representation as keys. Bitboards are 64 bit integers
+    # where the least significant position (first bit) corresponds with a1 and the most significant position (64th bit)
+    # corresponds with h8.
+
     def __init__(self):
-        
+
         self.fileRank = (
             ("a", 1), ("b", 1),("c", 1), ("d", 1),("e", 1), ("f", 1),("g", 1), ("h", 1),
             ("a", 2), ("b", 2),("c", 2), ("d", 2),("e", 2), ("f", 2),("g", 2), ("h", 2),
@@ -49,6 +59,8 @@ class Board:
     def appendBit2Bitboard(self, bitboard):
         return bitboard << 1 | 0b0
     
+
+    # function that takes the current board of the Board object and generates piece bitboards in the bitboards dictionary
     def board2Bitboard(self):
         for piece in self.board:
             for key in self.bitboards.keys():
@@ -62,9 +74,13 @@ class Board:
         pawnMoves = self.bitboards["p"] << 8 | self.bitboards["P"] >> 8
         print(format(pawnMoves, "064b"))
 
+    # function that returns the bitboard of the singular piece when given a board index
+    # for instance index2Bitboard(6) returns 64 (0b1000000)
     def index2Bitboard(self, index):
         return 0b1 << index
 
+    # returns the board index given a bitboard containing a single 1 bit
+    # for instance index2Bitboard(0b1000000) returns 6
     def bitboard2Index(self, bitboard):
         return (bitboard & -bitboard).bit_length()-1
     
@@ -91,8 +107,10 @@ class Board:
             print(self.board[i], end=' ')
             if i % 8 == 0:
                 print()
-
+########################################
 brd = Board()
-brd.board2Bitboard()
+brd2 = Board()
+#brd.board2Bitboard()
 #brd.fen2Board("bbrknqnr/pppppppp/8/8/8/8/PPPPPPPP/BBRKNQNR w KQkq - 0 1")
 brd.printBoard()
+print(brd.bitboard2Index(0b1000000))
