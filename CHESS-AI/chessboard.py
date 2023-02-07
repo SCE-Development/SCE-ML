@@ -67,6 +67,27 @@ class Board:
 
     def bitboard2Index(self, bitboard):
         return (bitboard & -bitboard).bit_length()-1
+    
+    def fen2Board(self, fen):
+        self.fen = fen
+        fenList = self.fen.split()
+        self.board = ["." for i in range(64)]
+        boardIndex = 0
+        fenIndex = 0
+        while fenIndex < len(fenList[0]):
+            fenCurr = fenList[0][fenIndex]
+            if fenCurr.isalpha():
+                self.board[boardIndex] = fenCurr
+                fenIndex += 1
+                boardIndex += 1
+            elif fenCurr == '/':
+                fenIndex += 1
+            else:
+                fenIndex += 1
+                boardIndex += int(fenCurr)
+        print(self.board)
 
 brd = Board()
 brd.board2Bitboard()
+
+brd.fen2Board("bbrknqnr/pppppppp/8/8/8/8/PPPPPPPP/BBRKNQNR w KQkq - 0 1")
