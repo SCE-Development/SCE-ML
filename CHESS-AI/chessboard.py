@@ -3,7 +3,7 @@
 class Board:
 
     # Board initializes with instance variables fen, board and bitboard. There is also a fileRank
-    # which is used to help get the file rank mapping of a piece in the board // see getFileRank()
+    # which is used to help get the file rank mapping of a piece square given index of board.
     # Each board is represented in three ways: board, fen, and bitboards.
     # (Board) A list of length 64 which contains information for the pieces on each
     # square of the board. Uppercase letters denote WHITE, lowercase denotes BLACK and "." denotes nothing.
@@ -31,14 +31,14 @@ class Board:
         self.fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
         self.board = [
-            "R", "N", "B", "K", "Q", "B", "N", "R",
+            "R", "N", "B", "Q", "K", "B", "N", "R",
             "P", "P", "P", "P", "P", "P", "P", "P", 
             ".", ".", ".", ".", ".", ".", ".", ".", 
             ".", ".", ".", ".", ".", ".", ".", ".",
-            ".", ".", ".", ".", ".", ".", ".", ".", 
-            ".", ".", ".", ".", ".", ".", ".", ".",
+            ".", "P", ".", ".", ".", ".", ".", ".", 
+            "p", "P", ".", ".", "P", ".", "P", ".",
             "p", "p", "p", "p", "p", "p", "p", "p",
-            "r", "n", "b", "k", "q", "b", "n", "r"
+            "r", "n", "b", "q", "k", "b", "n", "r"
         ]
 
         self.bitboards = {
@@ -53,27 +53,73 @@ class Board:
             "N": 0b0,
             "B": 0b0,
             "Q": 0b0,
-            "K": 0b0,  
+            "K": 0b0
         }
 
 
     # function that takes the current board of the Board object and generates piece bitboards in the bitboards dictionary
     def board2Bitboard(self):
         # iterates over board
-        for piece in self.board:
+        for pieceIndex in range(63, -1, -1):
             # iterates of the keys of bitboards dictionary, if the piece == key, then a 1 bit is appended to the piece bitboard
             # otherwise the piece bitboard is shifted 1 to the left (append a 0 bit)
             for key in self.bitboards.keys():
-                if piece == key:
+                if self.board[pieceIndex] == key:
                     self.bitboards[key] = self.bitboards[key] << 1 | 0b1
                 else:
                     self.bitboards[key] = self.bitboards[key] << 1
 
 
-    def pawnMoveGen(self):
-        pawnMoves = self.bitboards["p"] << 8 | self.bitboards["P"] >> 8
-        print(format(pawnMoves, "064b"))
-
+    def pawnMoveGen(self, index):
+        # given index of a pawn check in front to see if it is blocked by a piece
+        #   - do this using a mask for all pieces on the board and the bitboard representing the square in front of current pawn
+        # then check to the left and right in front of the pawn to see if it can capture a piece
+        #   - use mask of squares attacked by current pawn and mask of enemy pieces
+        # if pawn is in the a or h file, then it cannot attack diagonally outside the board
+        # does not have code from stopping a white pawn from going from 8th rank to 9th and similarly for black
+        # FIXME: pawns that move 2 moves on the first move are able to hop over pieces in front of them
+        pawnBb = self.index2Bitboard(index)
+        pieceMask = self.pieceMask()
+        if self.board[index] == "P":
+            pawnForwardMask = pawnBb << 8 if self.fileRank[index][1] != 2 else pawnBb << 8 | pawnBb << 16
+            enemyMask = self.enemyMask(True)
+            if self.fileRank[index][0] == "a":
+                return pawnForwardMask & pieceMask ^ pawnForwardMask | pawnBb << 9 & enemyMask
+            elif self.fileRank[index][0] == "h":
+                return pawnForwardMask & pieceMask ^ pawnForwardMask | pawnBb << 7 & enemyMask
+            return pawnForwardMask & pieceMask ^ pawnForwardMask | pawnBb << 7 & enemyMask | pawnBb << 9 & enemyMask
+        elif self.board[index] == 'p':
+            pawnForwardMask = pawnBb >> 8 if self.fileRank[index][1] != 7 else pawnBb >> 8 | pawnBb >> 16
+            enemyMask = self.enemyMask(False)
+            if self.fileRank[index][0] == "a":
+                return pawnForwardMask & pieceMask ^ pawnForwardMask | pawnBb >> 7 & enemyMask
+            elif self.fileRank[index][0] == "h":
+                return pawnForwardMask & pieceMask ^ pawnForwardMask | pawnBb >> 9 & enemyMask
+            return pawnForwardMask & pieceMask ^ pawnForwardMask | pawnBb >> 7 & enemyMask | pawnBb >> 9 & enemyMask           
+        print("Not a Pawn")
+        return 0
+    
+    # returns bitboard that has a 1 on each square that has a piece on it
+    def pieceMask(self):
+        pieceMask = 0b0
+        for bitboard in self.bitboards.values():
+            pieceMask |= bitboard
+        return pieceMask
+    
+    # given a boolean blackIsEnemy, if true, then generates bitboard mask of all black pieces
+    # otherwise generates bitboard mask for white pieces
+    def enemyMask(self, blackIsEnemy):
+        enemyMask = 0b0
+        if blackIsEnemy:
+            for key in self.bitboards.keys():
+                if key.islower():
+                    enemyMask |= self.bitboards[key]
+        else:
+            for key in self.bitboards.keys():
+                if key.isupper():
+                    enemyMask |= self.bitboards[key]
+        return enemyMask
+    
     # function that returns the bitboard of the singular piece when given a board index
     # for instance index2Bitboard(6) returns 64 (0b1000000)
     def index2Bitboard(self, index):
@@ -111,15 +157,36 @@ class Board:
                 boardIndex += int(fenCurr)
 
     def printBoard(self):
-        for i in range(63, -1, -1):
-            print(self.board[i], end=' ')
-            if i % 8 == 0:
-                print()
+        count = 0
+        i = 56
+        while i > -1:
+            while count < 8:
+                print(self.board[i], end=" ")
+                i += 1
+                count += 1
+            i -= 16
+            count = 0
+            print()
 
+    def printBitboard(self, bitboard):
+        bitboard = format(bitboard, "064b")
+        count = 0
+        i = 7
+        while i < 64:
+            while count < 8:
+                print(bitboard[i], end=" ")
+                i -= 1
+                count += 1
+            i += 16
+            count = 0
+            print()      
 
 ########################################
 brd = Board()
 brd2 = Board()
-#brd.board2Bitboard()
+brd.board2Bitboard()
 #brd.fen2Board("bbrknqnr/pppppppp/8/8/8/8/PPPPPPPP/BBRKNQNR w KQkq - 0 1")
 brd.printBoard()
+print("---------------")
+brd.printBitboard(brd.pawnMoveGen(40))
+
