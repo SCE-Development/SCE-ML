@@ -55,6 +55,21 @@ class Board:
             "Q": 0b0,
             "K": 0b0
         }
+    
+        self.knightDict = {
+            '0': 132096, '1': 329728, '2': 659712, '3': 1319424, '4': 2638848, '5': 5277696, '6': 10489856, '7': 4202496, 
+            '8': 33816580, '9': 84410376, '10': 168886289, '11': 337772578, '12': 675545156, '13': 1351090312, '14': 2685403152,
+            '15': 1075839008, '16': 8657044482, '17': 21609056261, '18': 43234889994, '19': 86469779988, '20': 172939559976,
+            '21': 345879119952, '22': 687463207072, '23': 275414786112, '24': 2216203387392, '25': 5531918402816, '26': 11068131838464,
+            '27': 22136263676928, '28': 44272527353856, '29': 88545054707712, '30': 175990581010432, '31': 70506185244672, '32': 567348067172352,
+            '33': 1416171111120896, '34': 2833441750646784, '35': 5666883501293568, '36': 11333767002587136, '37': 22667534005174272,
+            '38': 45053588738670592, '39': 18049583422636032, '40': 145241105196122112, '41': 362539804446949376, '42': 725361088165576704, 
+            '43': 1450722176331153408, '44': 2901444352662306816, '45': 5802888705324613632, '46': 11533718717099671552, '47': 4620693356194824192, 
+            '48': 288234782788157440, '49': 576469569871282176, '50': 1224997833292120064, '51': 2449995666584240128, '52': 4899991333168480256,
+            '53': 9799982666336960512, '54': 1152939783987658752, '55': 2305878468463689728, '56': 1128098930098176, '57': 2257297371824128, 
+            '58': 4796069720358912, '59': 9592139440717824, '60': 19184278881435648, '61': 38368557762871296, '62': 4679521487814656, 
+            '63': 9077567998918656
+            }
 
 
     # function that takes the current board of the Board object and generates piece bitboards in the bitboards dictionary
@@ -77,28 +92,42 @@ class Board:
         #   - use mask of squares attacked by current pawn and mask of enemy pieces
         # if pawn is in the a or h file, then it cannot attack diagonally outside the board
         # does not have code from stopping a white pawn from going from 8th rank to 9th and similarly for black
+        uint64 = 18446744073709551615                    # use this to & a binary string and limit to only 64 bits
         pawnBb = self.index2Bitboard(index)
         pieceMask = self.pieceMask()
         if self.board[index] == "P":
             pawnForwardMask = pawnBb << 8 if self.fileRank[index][1] != 2 else pawnBb << 8 | pawnBb << 16
             enemyMask = self.enemyMask(True)
             if self.fileRank[index][0] == "a":
-                return ((pawnForwardMask & pieceMask) | ((pawnBb << 8 & pieceMask) << 8)) ^ pawnForwardMask | pawnBb << 9 & enemyMask
+                return ((pawnForwardMask & pieceMask) | ((pawnBb << 8 & pieceMask) << 8)) ^ pawnForwardMask | pawnBb << 9 & enemyMask & uint64
             elif self.fileRank[index][0] == "h":
-                return ((pawnForwardMask & pieceMask) | ((pawnBb << 8 & pieceMask) << 8)) ^ pawnForwardMask | pawnBb << 7 & enemyMask 
-            return ((pawnForwardMask & pieceMask) | ((pawnBb << 8 & pieceMask) << 8)) ^ pawnForwardMask | pawnBb << 7 & enemyMask | pawnBb << 9 & enemyMask
+                return ((pawnForwardMask & pieceMask) | ((pawnBb << 8 & pieceMask) << 8)) ^ pawnForwardMask | pawnBb << 7 & enemyMask & uint64
+            return ((pawnForwardMask & pieceMask) | ((pawnBb << 8 & pieceMask) << 8)) ^ pawnForwardMask | pawnBb << 7 & enemyMask | pawnBb << 9 & enemyMask & uint64
         elif self.board[index] == 'p':
             pawnForwardMask = pawnBb >> 8 if self.fileRank[index][1] != 7 else pawnBb >> 8 | pawnBb >> 16
             enemyMask = self.enemyMask(False)
             enemyMask |= enemyMask >> 8
             if self.fileRank[index][0] == "a":
-                return ((pawnForwardMask & pieceMask) | ((pawnBb >> 8 & pieceMask) >> 8)) ^ pawnForwardMask | pawnBb >> 7 & enemyMask
+                return ((pawnForwardMask & pieceMask) | ((pawnBb >> 8 & pieceMask) >> 8)) ^ pawnForwardMask | pawnBb >> 7 & enemyMask & uint64
             elif self.fileRank[index][0] == "h":
-                return ((pawnForwardMask & pieceMask) | ((pawnBb >> 8 & pieceMask) >> 8)) ^ pawnForwardMask | pawnBb >> 9 & enemyMask
-            return ((pawnForwardMask & pieceMask) | ((pawnBb >> 8 & pieceMask) >> 8)) ^ pawnForwardMask | pawnBb >> 7 & enemyMask | pawnBb >> 9 & enemyMask           
+                return ((pawnForwardMask & pieceMask) | ((pawnBb >> 8 & pieceMask) >> 8)) ^ pawnForwardMask | pawnBb >> 9 & enemyMask & uint64
+            return ((pawnForwardMask & pieceMask) | ((pawnBb >> 8 & pieceMask) >> 8)) ^ pawnForwardMask | pawnBb >> 7 & enemyMask | pawnBb >> 9 & enemyMask & uint64  
         print("Not a Pawn")
         return 0
     
+    def knightMoves(self, index):
+        
+        knightBb = self.index2Bitboard(index)
+        uint64 = 18446744073709551615                    # use this to & a binary string and limit to only 64 bits
+        notGH = 4557430888798830399
+        notAB = 18229723555195321596
+        if self.fileRank[index][0] == "a" or self.fileRank[index][0] == "b":
+            return (knightBb << 6 | knightBb << 10 | knightBb << 15 | knightBb << 17 | knightBb >> 6 | knightBb >> 10 | knightBb >> 15 | knightBb >> 17) & notGH & uint64
+        elif self.fileRank[index][0] == "g" or self.fileRank[index][0] == "h":
+            return (knightBb << 6 | knightBb << 10 | knightBb << 15 | knightBb << 17 | knightBb >> 6 | knightBb >> 10 | knightBb >> 15 | knightBb >> 17) & notAB & uint64
+        else:
+            return (knightBb << 6 | knightBb << 10 | knightBb << 15 | knightBb << 17 | knightBb >> 6 | knightBb >> 10 | knightBb >> 15 | knightBb >> 17) & uint64
+
     # returns bitboard that has a 1 on each square that has a piece on it
     def pieceMask(self):
         pieceMask = 0b0
@@ -179,7 +208,7 @@ class Board:
                 count += 1
             i += 16
             count = 0
-            print()      
+            print()    
 
 ########################################
 brd = Board()
@@ -188,5 +217,11 @@ brd.board2Bitboard()
 #brd.fen2Board("bbrknqnr/pppppppp/8/8/8/8/PPPPPPPP/BBRKNQNR w KQkq - 0 1")
 brd.printBoard()
 print("---------------")
-brd.printBitboard(brd.pawnMoves(55))
 
+brd.printBitboard(brd.pawnMoves(8))
+
+knightDict = {}
+for i in range(64):
+    knightDict[str(i)] = brd.knightMoves(i)
+
+print(knightDict)
