@@ -70,7 +70,7 @@ class Board:
                     self.bitboards[key] = self.bitboards[key] << 1
 
 
-    def pawnMoveGen(self, index):
+    def pawnMoves(self, index):
         # given index of a pawn check in front to see if it is blocked by a piece
         #   - do this using a mask for all pieces on the board and the bitboard representing the square in front of current pawn
         # then check to the left and right in front of the pawn to see if it can capture a piece
@@ -188,5 +188,5 @@ brd.board2Bitboard()
 #brd.fen2Board("bbrknqnr/pppppppp/8/8/8/8/PPPPPPPP/BBRKNQNR w KQkq - 0 1")
 brd.printBoard()
 print("---------------")
-brd.printBitboard(brd.pawnMoveGen(55))
+brd.printBitboard(brd.pawnMoves(55))
 
