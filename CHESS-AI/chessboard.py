@@ -115,17 +115,28 @@ class Board:
         return 0
     
     def knightMovesGen(self, index):
-        
-        knightBb = self.index2Bitboard(index)
         uint64 = 18446744073709551615                    # use this to & a binary string and limit to only 64 bits
         notGH = 4557430888798830399
         notAB = 18229723555195321596
+        knightBb = self.index2Bitboard(index)
+        knightBb = (knightBb << 6 | knightBb << 10 | knightBb << 15 | knightBb << 17 | knightBb >> 6 | knightBb >> 10 | knightBb >> 15 | knightBb >> 17) & uint64
         if self.fileRank[index][0] == "a" or self.fileRank[index][0] == "b":
-            return (knightBb << 6 | knightBb << 10 | knightBb << 15 | knightBb << 17 | knightBb >> 6 | knightBb >> 10 | knightBb >> 15 | knightBb >> 17) & notGH & uint64
+            return knightBb & notGH
         elif self.fileRank[index][0] == "g" or self.fileRank[index][0] == "h":
-            return (knightBb << 6 | knightBb << 10 | knightBb << 15 | knightBb << 17 | knightBb >> 6 | knightBb >> 10 | knightBb >> 15 | knightBb >> 17) & notAB & uint64
-        else:
-            return (knightBb << 6 | knightBb << 10 | knightBb << 15 | knightBb << 17 | knightBb >> 6 | knightBb >> 10 | knightBb >> 15 | knightBb >> 17) & uint64
+            return knightBb & notAB
+        return knightBb
+    
+    def kingMovesGen(self, index):
+        uint64 = 18446744073709551615                    # use this to & a binary string and limit to only 64 bits
+        notGH = 4557430888798830399
+        notAB = 18229723555195321596
+        kingBb = self.index2Bitboard(index)
+        kingBb =  (kingBb << 9 | kingBb << 8 | kingBb << 7 | kingBb << 1 | kingBb >> 1 | kingBb >> 7 | kingBb >> 8 | kingBb >> 9) & uint64
+        if self.fileRank[index][0] == 'a':
+            return kingBb & notGH 
+        elif self.fileRank[index][0] == 'h':
+            return kingBb & notAB
+        return kingBb
 
     # returns bitboard that has a 1 on each square that has a piece on it
     def pieceMask(self):
@@ -214,13 +225,10 @@ brd = Board()
 brd2 = Board()
 brd.board2Bitboard()
 #brd.fen2Board("bbrknqnr/pppppppp/8/8/8/8/PPPPPPPP/BBRKNQNR w KQkq - 0 1")
-brd.printBoard()
 print("---------------")
 
-brd.printBitboard(brd.pawnMoves(8))
-
-knightMoves = []
+kingMoves = []
 for i in range(64):
-    knightMoves.append(brd.knightMovesGen(i))
+    kingMoves.append(brd.kingMovesGen(i))
 
-print(tuple(knightMoves))
+print(tuple(kingMoves))
