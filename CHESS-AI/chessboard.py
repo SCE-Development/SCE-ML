@@ -150,6 +150,10 @@ class Board:
             return kingBb & notAB
         return kingBb
 
+    #toggles a bit
+    def toggleBit(self, bitboard, index):
+        return bitboard ^ 0b1 << index
+    
     # returns bitboard that has a 1 on each square that has a piece on it
     def pieceMask(self):
         pieceMask = 0b0
@@ -238,4 +242,6 @@ brd2 = Board()
 brd.board2Bitboard()
 #brd.fen2Board("bbrknqnr/pppppppp/8/8/8/8/PPPPPPPP/BBRKNQNR w KQkq - 0 1")
 print("---------------")
+
+brd.printBitboard(brd.toggleBit(brd.kingMoves[34], 34))
 
