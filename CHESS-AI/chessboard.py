@@ -223,26 +223,26 @@ class Board:
 
     def rookMovesGen(self, index):
         uint64 = 18446744073709551615
-        knightBb = 0b0
+        rookBb = 0b0
         r = index//8
         f = index % 8
         atk_r = r + 1
         while atk_r < 8:  # North
-            knightBb = (knightBb | (0b1 << (atk_r*8 + f))) & uint64
+            rookBb = (rookBb | (0b1 << (atk_r*8 + f))) & uint64
             atk_r += 1
         atk_r = r - 1
         while atk_r >= 0:  # South
-            knightBb = (knightBb | (0b1 << (atk_r*8 + f))) & uint64
+            rookBb = (rookBb | (0b1 << (atk_r*8 + f))) & uint64
             atk_r -= 1
         atk_f = f + 1
         while atk_f < 8:  # East
-            knightBb = (knightBb | (0b1 << (r*8 + atk_f))) & uint64
+            rookBb = (rookBb | (0b1 << (r*8 + atk_f))) & uint64
             atk_f += 1
         atk_f = f - 1
         while atk_f >= 0:  # West
-            knightBb = (knightBb | (0b1 << (r*8 + atk_f))) & uint64
+            rookBb = (rookBb | (0b1 << (r*8 + atk_f))) & uint64
             atk_f -= 1
-        return knightBb
+        return rookBb
 
     # toggles a bit
 
