@@ -260,8 +260,13 @@ class Board:
 
     def queenMovesGen(self, index):
         return self.rookMovesGen(index) | self.bishopMovesGen(index)
-    # toggles a bit
+    
+    def makeMove(self, start, end):
+        self.board[end], self.board[start] = self.board[start], "."
+        self.toggleBit(self.bitboards[self.board[end]], end)
+        self.toggleBit(self.bitboards[self.board[end]], start)
 
+    # toggles a bit
     def toggleBit(self, bitboard, index):
         return bitboard ^ 0b1 << index
 
@@ -353,6 +358,13 @@ brd = Board()
 brd2 = Board()
 brd.board2Bitboard()
 # brd.fen2Board("bbrknqnr/pppppppp/8/8/8/8/PPPPPPPP/BBRKNQNR w KQkq - 0 1")
-print("---------------")
 # brd.printBitboard(brd.toggleBit(brd.knightMoves[34], 34))
-print(brd.printBitboard(brd.queenMoves[19]))
+#brd.printBitboard(brd.queenMoves[19])
+
+brd.printBoard()
+
+print("---------------")
+
+brd.makeMove(12, 28)
+
+brd.printBoard()
