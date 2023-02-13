@@ -262,9 +262,26 @@ class Board:
         return self.rookMovesGen(index) | self.bishopMovesGen(index)
     
     def makeMove(self, start, end):
-        self.board[end], self.board[start] = self.board[start], "."
-        self.toggleBit(self.bitboards[self.board[end]], end)
-        self.toggleBit(self.bitboards[self.board[end]], start)
+        if (0b1 << end & self.validMoves(start)):
+            self.board[end], self.board[start] = self.board[start], "."
+            self.toggleBit(self.bitboards[self.board[end]], end)
+            self.toggleBit(self.bitboards[self.board[end]], start)
+        else:
+            print("Not a valid move")
+
+    def validMoves(self, index):
+        temp = self.board[index].lower()
+        if temp == "p":
+            return self.pawnMoves(index)
+        elif temp == "n":
+            return self.knightMoves[index]
+        elif temp == "b":
+            return self.bishopMoves[index]
+        elif temp == "r":
+            return self.rookMoves[index]
+        elif temp == "k":
+            return self.kingMoves[index]
+
 
     # toggles a bit
     def toggleBit(self, bitboard, index):
@@ -365,6 +382,6 @@ brd.printBoard()
 
 print("---------------")
 
-brd.makeMove(12, 28)
+brd.makeMove(5, 13)
 
 brd.printBoard()
