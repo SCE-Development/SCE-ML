@@ -176,7 +176,6 @@ class Board:
             pawnForwardMask = pawnBb >> 8 if self.fileRank[index][1] != 7 else pawnBb >> 8 | pawnBb >> 16
             enemyMask = self.bitboards["white"]
             if self.fileRank[index][0] == "a":
-                brd.printBitboard(((pawnForwardMask & pieceMask) | ((pawnBb >> 8 & pieceMask) >> 8)) ^ pawnForwardMask | pawnBb >> 7 & enemyMask & uint64)
                 return ((pawnForwardMask & pieceMask) | ((pawnBb >> 8 & pieceMask) >> 8)) ^ pawnForwardMask | pawnBb >> 7 & enemyMask & uint64
             elif self.fileRank[index][0] == "h":
                 return ((pawnForwardMask & pieceMask) | ((pawnBb >> 8 & pieceMask) >> 8)) ^ pawnForwardMask | pawnBb >> 9 & enemyMask & uint64
@@ -302,8 +301,9 @@ class Board:
     # returns bitboard that has a 1 on each square that has a piece on it
     def pieceMask(self):
         pieceMask = 0b0
-        for bitboard in self.bitboards.values():
-            pieceMask |= bitboard
+        for key in self.bitboards.keys():
+            if len(key) == 1:
+                pieceMask |= self.bitboards[key]
         return pieceMask
 
     # given a boolean blackIsEnemy, if true, then generates bitboard mask of all black pieces
@@ -327,6 +327,8 @@ class Board:
             index = self.bitboard2Index(pieceBb)
             pieceBb = self.toggleBit(pieceBb, index)
             attacked |= self.validMoves(index)
+            brd.printBitboard(attacked)
+            print(index)
         return attacked
 
     # function that returns the bitboard of the singular piece when given a board index
@@ -406,4 +408,5 @@ print("---------------")
 brd.printBitboard(brd.bitboards["blackatk"])
 
 print()
-brd.printBitboard(brd.pawnMoves(52))
+
+brd.printBitboard(brd.pawnMoves(48))
