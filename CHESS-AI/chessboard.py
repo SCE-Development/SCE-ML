@@ -61,7 +61,11 @@ class Board:
             "N": 0b0,
             "B": 0b0,
             "Q": 0b0,
-            "K": 0b0
+            "K": 0b0,
+            "white": 0b0,
+            "black": 0b0,
+            "whiteatk": 0b0,
+            "blackatk": 0b0,
         }
 
         self.knightMoves = (
@@ -144,6 +148,10 @@ class Board:
                     self.bitboards[key] = self.bitboards[key] << 1 | 0b1
                 else:
                     self.bitboards[key] = self.bitboards[key] << 1
+        self.bitboards["white"] =  self.bitboards['B'] | self.bitboards['N'] | self.bitboards['R'] | self.bitboards['Q'] | self.bitboards['K'] | self.bitboards['P']
+        self.bitboards["black"] = self.bitboards['b'] | self.bitboards['n'] | self.bitboards['r'] | self.bitboards['q'] | self.bitboards['k'] | self.bitboards['p']
+        self.bitboards["whiteatk"] = self.attackedSquares("white")
+        self.bitboards["blackatk"] = self.attackedSquares("black")
 
     def pawnMoves(self, index):
         # given index of a pawn check in front to see if it is blocked by a piece
@@ -158,7 +166,7 @@ class Board:
         pieceMask = self.pieceMask()
         if self.board[index] == "P":
             pawnForwardMask = pawnBb << 8 if self.fileRank[index][1] != 2 else pawnBb << 8 | pawnBb << 16
-            enemyMask = self.enemyMask(True)
+            enemyMask = self.bitboards["black"]
             if self.fileRank[index][0] == "a":
                 return ((pawnForwardMask & pieceMask) | ((pawnBb << 8 & pieceMask) << 8)) ^ pawnForwardMask | pawnBb << 9 & enemyMask & uint64
             elif self.fileRank[index][0] == "h":
@@ -166,9 +174,9 @@ class Board:
             return ((pawnForwardMask & pieceMask) | ((pawnBb << 8 & pieceMask) << 8)) ^ pawnForwardMask | pawnBb << 7 & enemyMask | pawnBb << 9 & enemyMask & uint64
         elif self.board[index] == 'p':
             pawnForwardMask = pawnBb >> 8 if self.fileRank[index][1] != 7 else pawnBb >> 8 | pawnBb >> 16
-            enemyMask = self.enemyMask(False)
-            enemyMask |= enemyMask >> 8
+            enemyMask = self.bitboards["white"]
             if self.fileRank[index][0] == "a":
+                brd.printBitboard(((pawnForwardMask & pieceMask) | ((pawnBb >> 8 & pieceMask) >> 8)) ^ pawnForwardMask | pawnBb >> 7 & enemyMask & uint64)
                 return ((pawnForwardMask & pieceMask) | ((pawnBb >> 8 & pieceMask) >> 8)) ^ pawnForwardMask | pawnBb >> 7 & enemyMask & uint64
             elif self.fileRank[index][0] == "h":
                 return ((pawnForwardMask & pieceMask) | ((pawnBb >> 8 & pieceMask) >> 8)) ^ pawnForwardMask | pawnBb >> 9 & enemyMask & uint64
@@ -275,12 +283,16 @@ class Board:
             return self.pawnMoves(index)
         elif temp == "n":
             return self.knightMoves[index]
+        elif temp == "q":
+            return self.queenMoves[index]
         elif temp == "b":
             return self.bishopMoves[index]
         elif temp == "r":
             return self.rookMoves[index]
         elif temp == "k":
             return self.kingMoves[index]
+        else:
+            return 0
 
 
     # toggles a bit
@@ -307,14 +319,23 @@ class Board:
                 if key.isupper():
                     enemyMask |= self.bitboards[key]
         return enemyMask
+    
+    def attackedSquares(self, color):
+        pieceBb = self.bitboards[color]
+        attacked = 0b0
+        while pieceBb > 0:
+            index = self.bitboard2Index(pieceBb)
+            pieceBb = self.toggleBit(pieceBb, index)
+            attacked |= self.validMoves(index)
+        return attacked
 
     # function that returns the bitboard of the singular piece when given a board index
     # for instance index2Bitboard(6) returns 64 (0b1000000)
     def index2Bitboard(self, index):
         return 0b1 << index
 
-    # returns the board index given a bitboard containing a single 1 bit
-    # for instance index2Bitboard(0b1000000) returns 6
+    # returns the board index of the smallest set bit given a bitboard
+    # for instance index2Bitboard(0b111000000) returns 6
     def bitboard2Index(self, bitboard):
         return (bitboard & -bitboard).bit_length()-1
 
@@ -382,6 +403,7 @@ brd.printBoard()
 
 print("---------------")
 
-brd.makeMove(5, 13)
+brd.printBitboard(brd.bitboards["blackatk"])
 
-brd.printBoard()
+print()
+brd.printBitboard(brd.pawnMoves(52))
