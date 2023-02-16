@@ -148,8 +148,8 @@ class Board:
                     self.bitboards[key] = self.bitboards[key] << 1 | 0b1
                 else:
                     self.bitboards[key] = self.bitboards[key] << 1
-        self.bitboards["white"] =  self.bitboards['B'] | self.bitboards['N'] | self.bitboards['R'] | self.bitboards['Q'] | self.bitboards['K'] | self.bitboards['P']
-        self.bitboards["black"] = self.bitboards['b'] | self.bitboards['n'] | self.bitboards['r'] | self.bitboards['q'] | self.bitboards['k'] | self.bitboards['p']
+        self.bitboards["white"] =  self.bitboards['B'] | self.bitboards['N'] | self.bitboards['R'] | self.bitboards['Q'] | self.bitboards['P']
+        self.bitboards["black"] = self.bitboards['b'] | self.bitboards['n'] | self.bitboards['r'] | self.bitboards['q'] | self.bitboards['p']
         self.bitboards["whiteatk"] = self.attackedSquares("white")
         self.bitboards["blackatk"] = self.attackedSquares("black")
 
@@ -292,6 +292,21 @@ class Board:
             return self.kingMoves[index]
         else:
             return 0
+        
+    def validKingMoves(self, index, blackIsEnemy):
+        if blackIsEnemy:
+            return (self.kingMoves[index] | 0b1 << index) & (self.bitboards["blackatk"] | self.bitboards["white"]) ^ (self.kingMoves[index] | 0b1 << index)   
+        return (self.kingMoves[index] & (self.bitboards["whiteatk"] | self.bitboards["black"])) ^ (self.kingMoves[index] | 0b1 << index)
+    def check(self, index, blackIsEnemy):
+        moves = self.validKingMoves(index, blackIsEnemy)
+        if moves == 0:
+            print("Checkmate")
+            return -1
+        elif moves == 0b1 << index:
+            print("Stalemate")
+            return 0
+        print("Not in Check")
+        return 1
 
 
     # toggles a bit
@@ -299,10 +314,11 @@ class Board:
         return bitboard ^ 0b1 << index
 
     # returns bitboard that has a 1 on each square that has a piece on it
+    # deprecated (use self.bitboards["(white/black)"]) instead
     def pieceMask(self):
         pieceMask = 0b0
         for key in self.bitboards.keys():
-            if len(key) == 1:
+            if key in ("R", "N", "B", "Q", "K", "P", "r", "n", "b", "q", "k", "p"):
                 pieceMask |= self.bitboards[key]
         return pieceMask
 
@@ -327,8 +343,6 @@ class Board:
             index = self.bitboard2Index(pieceBb)
             pieceBb = self.toggleBit(pieceBb, index)
             attacked |= self.validMoves(index)
-            brd.printBitboard(attacked)
-            print(index)
         return attacked
 
     # function that returns the bitboard of the singular piece when given a board index
@@ -405,8 +419,12 @@ brd.printBoard()
 
 print("---------------")
 
+index = 49
+
 brd.printBitboard(brd.bitboards["blackatk"])
-
 print()
+brd.printBitboard(brd.kingMoves[index])
+print()
+brd.printBitboard(brd.validKingMoves(index, True))
 
-brd.printBitboard(brd.pawnMoves(48))
+brd.check(index, True)
