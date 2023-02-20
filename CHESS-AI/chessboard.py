@@ -308,7 +308,6 @@ class Board:
         print("Not in Check")
         return 1
 
-
     # toggles a bit
     def toggleBit(self, bitboard, index):
         return bitboard ^ 0b1 << index
@@ -354,7 +353,7 @@ class Board:
     # for instance index2Bitboard(0b111000000) returns 6
     def bitboard2Index(self, bitboard):
         return (bitboard & -bitboard).bit_length()-1
-
+        
     # takes a FEN string and assigns it to the fen of the Board
     # also populates the board variable of Board according to the given FEN string
     def fen2Board(self, fen):
@@ -426,5 +425,4 @@ print()
 brd.printBitboard(brd.kingMoves[index])
 print()
 brd.printBitboard(brd.validKingMoves(index, True))
-
 brd.check(index, True)
