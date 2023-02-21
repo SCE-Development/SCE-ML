@@ -71,6 +71,28 @@ class Board:
             "occupancy": 0b0,
         }
 
+        self.fileMasks = {
+            0: 72340172838076673,
+            1: 144680345676153346,
+            2: 289360691352306692,
+            3: 578721382704613384,
+            4: 1157442765409226768,
+            5: 2314885530818453536,
+            6: 4629771061636907072,
+            7: 9259542123273814144
+        }
+
+        self.rankMasks = {
+            0: 255,
+            1: 65280,
+            2: 16711680,
+            3: 4278190080,
+            4: 1095216660480,
+            5: 280375465082880,
+            6: 71776119061217280,
+            7: 18374686479671623680,
+        }
+
         self.knightMoves = (
             132096, 329728, 659712, 1319424, 2638848, 5277696, 10489856, 4202496, 33816580, 84410376,
             168886289, 337772578, 675545156, 1351090312, 2685403152, 1075839008, 8657044482, 21609056261,
@@ -363,6 +385,41 @@ class Board:
             atk_f -= 1
         return rookBb
 
+    def rookAttack(self, index, isBlack: bool):
+        uint64 = 18446744073709551615
+        file = index % 8
+        # Vertical Rays
+        atk_mask = self.fileMasks[file]
+        pieceBb = self.index2Bitboard(index)
+        occBb = self.bitboards['occupancy']
+        upRay = occBb & atk_mask
+        downRay = self.bitSwap(upRay)
+        upRay = (upRay - pieceBb)
+        downRay = downRay - self.bitSwap(pieceBb)
+        upRay = upRay ^ self.bitSwap(downRay)
+        Vertical = upRay & atk_mask
+
+        rank = index//8
+        # Horizontal Rays (northweast and southeast)
+        atk_mask = self.rankMasks[rank]
+        pieceBb = self.index2Bitboard(index)
+        occBb = self.bitboards['occupancy']
+        rightRay = occBb & atk_mask
+        leftRay = self.bitSwap(rightRay)
+        rightRay = (rightRay - pieceBb)
+        leftRay = leftRay - self.bitSwap(pieceBb)
+        rightRay = rightRay ^ self.bitSwap(leftRay)
+        Horizontal = rightRay & atk_mask
+
+        color = 'white'
+        if isBlack:
+            color = 'black'
+
+        rays = Vertical | Horizontal
+
+        atkBb = (rays ^ self.bitboards[color]) & rays
+        return atkBb
+
     def queenMovesGen(self, index):
         return self.rookMovesGen(index) | self.bishopMovesGen(index)
 
@@ -535,10 +592,10 @@ print()
 brd.printBitboard(brd.validKingMoves(index, True))
 
 brd.check(index, True)
-# 5543124099779721288, 18446462598732906495
-brd.bitboards['occupancy'] = 18446462598732906495
-# 65535
-brd.bitboards['white'] = 65535
+# 5543124099779721288, 18446462598732906495, 18429224188100345855
+brd.bitboards['occupancy'] = 18429224188100345855
+# 65535 #13889313184910721216 #18374969058471772417
+brd.bitboards['white'] = 18374969058471772417
 print("\nBoard Occupancy")
 brd.printBitboard(brd.bitboards['occupancy'])
 print("\nAlly White Pieces")
@@ -546,5 +603,9 @@ brd.printBitboard(brd.bitboards['white'])
 print("\nWhite Bishop Moves for index:" + str(index))
 brd.printBitboard(brd.bishopMoves[index])
 print("\nWhite Bishop Moves for index:" + str(index)+" with blockers")
-brd.printBitboard(brd.bishopAttack(index, True))
+brd.printBitboard(brd.bishopAttack(index, False))
+print("\nWhite Rook Moves for index:" + str(index))
+brd.printBitboard(brd.rookMoves[index])
+print("\nWhite Rook Moves for index:" + str(index)+" with blockers")
+brd.printBitboard(brd.rookAttack(index, False))
 print("\n")
