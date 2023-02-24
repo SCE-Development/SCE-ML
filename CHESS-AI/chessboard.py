@@ -309,16 +309,18 @@ class Board:
         print("Not in Check")
         return 1
 
-    def validKnightMoves(self, index, friendlyPieces):
-        validKnightMoves = self.knightMoves[index]
-        for i in range(validKnightMoves.bit_length()):
-            bitKnightMoves = (validKnightMoves >> i) & 1
-            bitFriendlyPieces = (friendlyPieces >> i) & 1
-            if (bitKnightMoves == 1 and bitFriendlyPieces == 1):
-                validKnightMoves = brd.toggleBit(validKnightMoves, i)
-        return validKnightMoves
+    # first and knight moves and friendly team pieces to get overlap
+    # then XOR knight moves with overlap to get valid knight moves
+    def validKnightMoves(self, index, blackIsEnemey):
+        if blackIsEnemey:
+            friendlyColor = self.bitboards["white"]
+        else:
+            friendlyColor = self.bitboards["black"]
+        overlap = self.knightMoves[index] & friendlyColor
+        return self.knightMoves[index] ^ overlap
 
     # toggles a bit
+
     def toggleBit(self, bitboard, index):
         return bitboard ^ 0b1 << index
 
@@ -424,15 +426,24 @@ brd.board2Bitboard()
 # brd.printBitboard(brd.toggleBit(brd.knightMoves[34], 34))
 # brd.printBitboard(brd.queenMoves[19])
 
-brd.printBoard()
+# brd.printBoard()
 
-print("---------------")
+# print("---------------")
 
-index = 49
+# index = 49
 
-brd.printBitboard(brd.bitboards["blackatk"])
-print()
-brd.printBitboard(brd.kingMoves[index])
-print()
-brd.printBitboard(brd.validKingMoves(index, True))
-brd.check(index, True)
+# brd.printBitboard(brd.bitboards["blackatk"])
+# print()
+# brd.printBitboard(brd.kingMoves[index])
+# print()
+# brd.printBitboard(brd.validKingMoves(index, True))
+# brd.check(index, True)
+
+print("Knight moves")
+brd.printBitboard(brd.knightMoves[2])
+
+print("White")
+brd.printBitboard(brd.bitboards["white"])
+
+print("VALID KNIGHT MOVES")
+brd.printBitboard(brd.validKnightMoves(2, True))
