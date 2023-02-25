@@ -1,3 +1,5 @@
+import struct
+import numpy as np
 
 
 class Board:
@@ -66,6 +68,29 @@ class Board:
             "black": 0b0,
             "whiteatk": 0b0,
             "blackatk": 0b0,
+            "occupancy": 0b0,
+        }
+
+        self.fileMasks = {
+            0: 72340172838076673,
+            1: 144680345676153346,
+            2: 289360691352306692,
+            3: 578721382704613384,
+            4: 1157442765409226768,
+            5: 2314885530818453536,
+            6: 4629771061636907072,
+            7: 9259542123273814144
+        }
+
+        self.rankMasks = {
+            0: 255,
+            1: 65280,
+            2: 16711680,
+            3: 4278190080,
+            4: 1095216660480,
+            5: 280375465082880,
+            6: 71776119061217280,
+            7: 18374686479671623680,
         }
 
         self.knightMoves = (
@@ -106,6 +131,29 @@ class Board:
             360293502378066048, 720587009051099136, 1441174018118909952, 2882348036221108224, 5764696068147249408, 11529391036782871041,
             4611756524879479810, 567382630219904, 1416240237150208, 2833579985862656, 5667164249915392, 11334324221640704, 22667548931719168,
             45053622886727936, 18049651735527937
+        )
+
+        self.bishopForeslash = (
+            9241421688590303744, 36099303471055872, 141012904183808, 550831656960, 2151686144, 8404992, 32768, 0, 4620710844295151616,
+            9241421688590303233, 36099303471054850, 141012904181764, 550831652872, 2151677968, 8388640, 64, 2310355422147510272,
+            4620710844295020800, 9241421688590041601, 36099303470531586, 141012903135236, 550829559816, 2147491856, 16416, 1155177711056977920,
+            2310355422114021376, 4620710844228043008, 9241421688456086017, 36099303202620418, 141012367312900, 549757915144, 4202512, 577588851233521664,
+            1155177702483820544, 2310355404967706624, 4620710809935413504, 9241421619870827009, 36099166032102402, 140738026276868, 1075843080,
+            288793326105133056, 577586656505233408, 1155173313027244032, 2310346626054553600, 4620693252109107456, 9241386504218214913,
+            36028934726878210, 275415828484, 144115188075855872, 288231475663339520, 576462955621646336, 1152925911260069888, 2305851822520205312,
+            4611703645040410880, 9223407290080821761, 70506452091906, 0, 281474976710656, 564049465049088, 1128103225065472, 2256206466908160,
+            4512412933881856, 9024825867763968, 18049651735527937
+        )
+
+        self.bishopBackslash = (
+            0, 256, 66048, 16909312, 4328785920, 1108169199616, 283691315109888, 72624976668147712, 2, 65540, 16908296, 4328783888, 1108169195552,
+            283691315101760, 72624976668131456, 145249953336262656, 516, 16778248, 4328523792, 1108168675360, 283691314061376, 72624976666050688,
+            145249953332101120, 290499906664136704, 132104, 4295231504, 1108102090784, 283691180892224, 72624976399712384, 145249952799424512,
+            290499905598783488, 580999811180789760, 33818640, 1099579265056, 283674135240768, 72624942308409472, 145249884616818688, 290499769233571840,
+            580999538450366464, 1161999072605765632, 8657571872, 281492291854400, 72620578621636736, 145241157243273216, 290482314486480896,
+            580964628956184576, 1161929253617401856, 2323857407723175936, 2216338399296, 72062026714726528, 144124053429452800, 288248106858840064,
+            576496213700902912, 1152992423106838528, 2305983746702049280, 4611686018427387904, 567382630219904, 1134765260439552, 2269530520813568,
+            4539061024849920, 9078117754732544, 18155135997837312, 36028797018963968, 0
         )
 
         self.rookMoves = (
@@ -242,6 +290,78 @@ class Board:
             atk_f += 1
         return bishopBb
 
+    def bishopForeslashGen(self, index):
+        uint64 = 18446744073709551615
+        bishopBb = 0b0
+        r = index//8
+        f = index % 8
+        atk_r = r + 1
+        atk_f = f + 1
+        while atk_r < 8 and atk_f < 8:  # Northeast
+            bishopBb = (bishopBb | (0b1 << (atk_r*8 + atk_f))) & uint64
+            atk_r += 1
+            atk_f += 1
+        atk_r = r - 1
+        atk_f = f - 1
+        while atk_r >= 0 and atk_f >= 0:  # Southwest
+            bishopBb = (bishopBb | (0b1 << (atk_r*8 + atk_f))) & uint64
+            atk_r -= 1
+            atk_f -= 1
+        return bishopBb
+
+    def bishopBackslashGen(self, index):
+        uint64 = 18446744073709551615
+        bishopBb = 0b0
+        r = index//8
+        f = index % 8
+        atk_r = r + 1
+        atk_f = f - 1
+        while atk_r < 8 and atk_f >= 0:  # Northwest
+            bishopBb = (bishopBb | (0b1 << (atk_r*8 + atk_f))) & uint64
+            atk_r += 1
+            atk_f -= 1
+        atk_r = r - 1
+        atk_f = f + 1
+        while atk_r >= 0 and atk_f < 8:  # Southeast
+            bishopBb = (bishopBb | (0b1 << (atk_r*8 + atk_f))) & uint64
+            atk_r -= 1
+            atk_f += 1
+        return bishopBb
+
+    def bishopAttack(self, index, isBlack: bool):
+        uint64 = 18446744073709551615
+
+        # foreslash (northeast and southwest)
+        atk_mask = self.bishopForeslash[index]
+        pieceBb = self.index2Bitboard(index)
+        occBb = self.bitboards['occupancy']
+        forwardRays = occBb & atk_mask
+        backRays = self.bitSwap(forwardRays)
+        forwardRays = (forwardRays - pieceBb)
+        backRays = backRays - self.bitSwap(pieceBb)
+        forwardRays = forwardRays ^ self.bitSwap(backRays)
+        foreRays = forwardRays & atk_mask
+
+        # backslash (northweast and southeast)
+        atk_mask = self.bishopBackslash[index]
+        pieceBb = self.index2Bitboard(index)
+        occBb = self.bitboards['occupancy']
+        forwardRays = occBb & atk_mask
+        backRays = self.bitSwap(forwardRays)
+        forwardRays = (forwardRays - pieceBb)
+        backRays = backRays - self.bitSwap(pieceBb)
+        forwardRays = forwardRays ^ self.bitSwap(backRays)
+        nonForeRays = forwardRays & atk_mask
+
+        color = 'white'
+        if isBlack:
+            color = 'black'
+
+        rays = foreRays | nonForeRays
+
+        atkBb = (rays ^ self.bitboards[color]) & rays
+        return atkBb
+
     def rookMovesGen(self, index):
         uint64 = 18446744073709551615
         rookBb = 0b0
@@ -264,6 +384,41 @@ class Board:
             rookBb = (rookBb | (0b1 << (r*8 + atk_f))) & uint64
             atk_f -= 1
         return rookBb
+
+    def rookAttack(self, index, isBlack: bool):
+        uint64 = 18446744073709551615
+        file = index % 8
+        # Vertical Rays
+        atk_mask = self.fileMasks[file]
+        pieceBb = self.index2Bitboard(index)
+        occBb = self.bitboards['occupancy']
+        upRay = occBb & atk_mask
+        downRay = self.bitSwap(upRay)
+        upRay = (upRay - pieceBb)
+        downRay = downRay - self.bitSwap(pieceBb)
+        upRay = upRay ^ self.bitSwap(downRay)
+        Vertical = upRay & atk_mask
+
+        rank = index//8
+        # Horizontal Rays (northweast and southeast)
+        atk_mask = self.rankMasks[rank]
+        pieceBb = self.index2Bitboard(index)
+        occBb = self.bitboards['occupancy']
+        rightRay = occBb & atk_mask
+        leftRay = self.bitSwap(rightRay)
+        rightRay = (rightRay - pieceBb)
+        leftRay = leftRay - self.bitSwap(pieceBb)
+        rightRay = rightRay ^ self.bitSwap(leftRay)
+        Horizontal = rightRay & atk_mask
+
+        color = 'white'
+        if isBlack:
+            color = 'black'
+
+        rays = Vertical | Horizontal
+
+        atkBb = (rays ^ self.bitboards[color]) & rays
+        return atkBb
 
     def queenMovesGen(self, index):
         return self.rookMovesGen(index) | self.bishopMovesGen(index)
@@ -309,8 +464,17 @@ class Board:
         print("Not in Check")
         return 1
 
+    # returns an integer that has its bits reversed
+    def bitSwap(self, n):
+        result = 0
+        for i in range(64):
+            result <<= 1
+            result |= n & 1
+            n >>= 1
+        return result
     # first and knight moves and friendly team pieces to get overlap
     # then XOR knight moves with overlap to get valid knight moves
+    
     def validKnightMoves(self, index, blackIsEnemey):
         if blackIsEnemey:
             friendlyColor = self.bitboards["white"]
@@ -318,9 +482,8 @@ class Board:
             friendlyColor = self.bitboards["black"]
         overlap = self.knightMoves[index] & friendlyColor
         return self.knightMoves[index] ^ overlap
-
+        
     # toggles a bit
-
     def toggleBit(self, bitboard, index):
         return bitboard ^ 0b1 << index
 
@@ -439,11 +602,22 @@ brd.board2Bitboard()
 # brd.printBitboard(brd.validKingMoves(index, True))
 # brd.check(index, True)
 
-print("Knight moves")
-brd.printBitboard(brd.knightMoves[2])
-
-print("White")
-brd.printBitboard(brd.bitboards["white"])
-
-print("VALID KNIGHT MOVES")
-brd.printBitboard(brd.validKnightMoves(2, True))
+index = 35
+brd.check(index, True)
+# 5543124099779721288, 18446462598732906495, 18429224188100345855
+brd.bitboards['occupancy'] = 18429224188100345855
+# 65535 #13889313184910721216 #18374969058471772417
+brd.bitboards['white'] = 18374969058471772417
+print("\nBoard Occupancy")
+brd.printBitboard(brd.bitboards['occupancy'])
+print("\nAlly White Pieces")
+brd.printBitboard(brd.bitboards['white'])
+print("\nWhite Bishop Moves for index:" + str(index))
+brd.printBitboard(brd.bishopMoves[index])
+print("\nWhite Bishop Moves for index:" + str(index)+" with blockers")
+brd.printBitboard(brd.bishopAttack(index, False))
+print("\nWhite Rook Moves for index:" + str(index))
+brd.printBitboard(brd.rookMoves[index])
+print("\nWhite Rook Moves for index:" + str(index)+" with blockers")
+brd.printBitboard(brd.rookAttack(index, False))
+print("\n")
