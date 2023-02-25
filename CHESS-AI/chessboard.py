@@ -472,8 +472,18 @@ class Board:
             result |= n & 1
             n >>= 1
         return result
+    # first and knight moves and friendly team pieces to get overlap
+    # then XOR knight moves with overlap to get valid knight moves
+    
+    def validKnightMoves(self, index, blackIsEnemey):
+        if blackIsEnemey:
+            friendlyColor = self.bitboards["white"]
+        else:
+            friendlyColor = self.bitboards["black"]
+        overlap = self.knightMoves[index] & friendlyColor
+        return self.knightMoves[index] ^ overlap
+        
     # toggles a bit
-
     def toggleBit(self, bitboard, index):
         return bitboard ^ 0b1 << index
 
@@ -579,18 +589,20 @@ brd.board2Bitboard()
 # brd.printBitboard(brd.toggleBit(brd.knightMoves[34], 34))
 # brd.printBitboard(brd.queenMoves[19])
 
-brd.printBoard()
+# brd.printBoard()
 
-print("---------------")
+# print("---------------")
+
+# index = 49
+
+# brd.printBitboard(brd.bitboards["blackatk"])
+# print()
+# brd.printBitboard(brd.kingMoves[index])
+# print()
+# brd.printBitboard(brd.validKingMoves(index, True))
+# brd.check(index, True)
 
 index = 35
-
-brd.printBitboard(brd.bitboards["blackatk"])
-print()
-brd.printBitboard(brd.kingMoves[index])
-print()
-brd.printBitboard(brd.validKingMoves(index, True))
-
 brd.check(index, True)
 # 5543124099779721288, 18446462598732906495, 18429224188100345855
 brd.bitboards['occupancy'] = 18429224188100345855
