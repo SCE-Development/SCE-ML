@@ -148,7 +148,7 @@ class Board:
                     self.bitboards[key] = self.bitboards[key] << 1 | 0b1
                 else:
                     self.bitboards[key] = self.bitboards[key] << 1
-        self.bitboards["white"] =  self.bitboards['B'] | self.bitboards['N'] | self.bitboards['R'] | self.bitboards['Q'] | self.bitboards['P']
+        self.bitboards["white"] = self.bitboards['B'] | self.bitboards['N'] | self.bitboards['R'] | self.bitboards['Q'] | self.bitboards['P']
         self.bitboards["black"] = self.bitboards['b'] | self.bitboards['n'] | self.bitboards['r'] | self.bitboards['q'] | self.bitboards['p']
         self.bitboards["whiteatk"] = self.attackedSquares("white")
         self.bitboards["blackatk"] = self.attackedSquares("black")
@@ -267,7 +267,7 @@ class Board:
 
     def queenMovesGen(self, index):
         return self.rookMovesGen(index) | self.bishopMovesGen(index)
-    
+
     def makeMove(self, start, end):
         if (0b1 << end & self.validMoves(start)):
             self.board[end], self.board[start] = self.board[start], "."
@@ -292,11 +292,12 @@ class Board:
             return self.kingMoves[index]
         else:
             return 0
-        
+
     def validKingMoves(self, index, blackIsEnemy):
         if blackIsEnemy:
-            return (self.kingMoves[index] | 0b1 << index) & (self.bitboards["blackatk"] | self.bitboards["white"]) ^ (self.kingMoves[index] | 0b1 << index)   
+            return (self.kingMoves[index] | 0b1 << index) & (self.bitboards["blackatk"] | self.bitboards["white"]) ^ (self.kingMoves[index] | 0b1 << index)
         return (self.kingMoves[index] & (self.bitboards["whiteatk"] | self.bitboards["black"])) ^ (self.kingMoves[index] | 0b1 << index)
+
     def check(self, index, blackIsEnemy):
         moves = self.validKingMoves(index, blackIsEnemy)
         if moves == 0:
@@ -308,7 +309,18 @@ class Board:
         print("Not in Check")
         return 1
 
+    # first and knight moves and friendly team pieces to get overlap
+    # then XOR knight moves with overlap to get valid knight moves
+    def validKnightMoves(self, index, blackIsEnemey):
+        if blackIsEnemey:
+            friendlyColor = self.bitboards["white"]
+        else:
+            friendlyColor = self.bitboards["black"]
+        overlap = self.knightMoves[index] & friendlyColor
+        return self.knightMoves[index] ^ overlap
+
     # toggles a bit
+
     def toggleBit(self, bitboard, index):
         return bitboard ^ 0b1 << index
 
@@ -334,7 +346,7 @@ class Board:
                 if key.isupper():
                     enemyMask |= self.bitboards[key]
         return enemyMask
-    
+
     def attackedSquares(self, color):
         pieceBb = self.bitboards[color]
         attacked = 0b0
@@ -353,7 +365,7 @@ class Board:
     # for instance index2Bitboard(0b111000000) returns 6
     def bitboard2Index(self, bitboard):
         return (bitboard & -bitboard).bit_length()-1
-        
+
     # takes a FEN string and assigns it to the fen of the Board
     # also populates the board variable of Board according to the given FEN string
     def fen2Board(self, fen):
@@ -412,17 +424,26 @@ brd2 = Board()
 brd.board2Bitboard()
 # brd.fen2Board("bbrknqnr/pppppppp/8/8/8/8/PPPPPPPP/BBRKNQNR w KQkq - 0 1")
 # brd.printBitboard(brd.toggleBit(brd.knightMoves[34], 34))
-#brd.printBitboard(brd.queenMoves[19])
+# brd.printBitboard(brd.queenMoves[19])
 
-brd.printBoard()
+# brd.printBoard()
 
-print("---------------")
+# print("---------------")
 
-index = 49
+# index = 49
 
-brd.printBitboard(brd.bitboards["blackatk"])
-print()
-brd.printBitboard(brd.kingMoves[index])
-print()
-brd.printBitboard(brd.validKingMoves(index, True))
-brd.check(index, True)
+# brd.printBitboard(brd.bitboards["blackatk"])
+# print()
+# brd.printBitboard(brd.kingMoves[index])
+# print()
+# brd.printBitboard(brd.validKingMoves(index, True))
+# brd.check(index, True)
+
+print("Knight moves")
+brd.printBitboard(brd.knightMoves[2])
+
+print("White")
+brd.printBitboard(brd.bitboards["white"])
+
+print("VALID KNIGHT MOVES")
+brd.printBitboard(brd.validKnightMoves(2, True))
