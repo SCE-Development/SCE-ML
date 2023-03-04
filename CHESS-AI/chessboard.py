@@ -328,7 +328,7 @@ class Board:
             atk_f += 1
         return bishopBb
 
-    def bishopAttack(self, index, isBlack: bool):
+    def bishopAttack(self, index, blackIsEnemy: bool):
         uint64 = 18446744073709551615
 
         # foreslash (northeast and southwest)
@@ -353,9 +353,9 @@ class Board:
         forwardRays = forwardRays ^ self.bitSwap(backRays)
         nonForeRays = forwardRays & atk_mask
 
-        color = 'white'
-        if isBlack:
-            color = 'black'
+        color = 'black'
+        if blackIsEnemy:
+            color = 'white'
 
         rays = foreRays | nonForeRays
 
@@ -385,7 +385,7 @@ class Board:
             atk_f -= 1
         return rookBb
 
-    def rookAttack(self, index, isBlack: bool):
+    def rookAttack(self, index, blackIsEnemy: bool):
         uint64 = 18446744073709551615
         file = index % 8
         # Vertical Rays
@@ -411,9 +411,9 @@ class Board:
         rightRay = rightRay ^ self.bitSwap(leftRay)
         Horizontal = rightRay & atk_mask
 
-        color = 'white'
-        if isBlack:
-            color = 'black'
+        color = 'black'
+        if blackIsEnemy:
+            color = 'white'
 
         rays = Vertical | Horizontal
 
@@ -423,28 +423,76 @@ class Board:
     def queenMovesGen(self, index):
         return self.rookMovesGen(index) | self.bishopMovesGen(index)
 
-    def makeMove(self, start, end):
-        if (0b1 << end & self.validMoves(start)):
-            self.board[end], self.board[start] = self.board[start], "."
-            self.toggleBit(self.bitboards[self.board[end]], end)
-            self.toggleBit(self.bitboards[self.board[end]], start)
-        else:
-            print("Not a valid move")
+    def queenAttack(self, index, blackIsEnemy: bool):
+        return self.rookAttack(index, blackIsEnemy) | self.bishopAttack(index, blackIsEnemy)
 
-    def validMoves(self, index):
-        temp = self.board[index].lower()
+    def makeMove(self, start, end):
+        if (0b1 << end & self.pseudovalidMoves(start)):
+            self.board[end], self.board[start] = self.board[start], "."
+            self.bitboards[self.board[end]] = self.toggleBit(
+                self.bitboards[self.board[end]], end)
+            self.bitboards[self.board[end]] = self.toggleBit(
+                self.bitboards[self.board[end]], start)
+        else:
+            print("Not a pseudovalid move")
+
+    def makeLegalMove(self, start, end):
+        if (0b1 << end & self.legalMoves(start)):
+            self.board[end], self.board[start] = self.board[start], "."
+            self.bitboards[self.board[end]] = self.toggleBit(
+                self.bitboards[self.board[end]], end)
+            self.bitboards[self.board[end]] = self.toggleBit(
+                self.bitboards[self.board[end]], start)
+        else:
+            print("Not a legal move")
+
+    def legalMoves(self, index):
+        legalBb, pseudoBb = self.pseudovalidMoves(index)
+        kingindex = self.bitboards["k"]
+        if (self.board[index].isupper()):
+
+            kingindex = self.bitboards["K"]
+
+        while pseudoBb > 0:
+            end = self.bitboard2Index(pieceBb)
+            pieceBb = self.toggleBit(pieceBb, index)
+            prevEnd, prevStart = self.board[end], self.board[index]
+            self.makeMove(index, end)
+            if(self.check(kingindex, self.board[index].isupper()) == -1):
+                legalBb = self.toggleBit(legalBb, end)
+            self.bitboards[self.board[end]] = self.toggleBit(
+                self.bitboards[self.board[end]], end)
+            self.bitboards[self.board[end]] = self.toggleBit(
+                self.bitboards[self.board[end]], index)
+            self.board[end], self.board[index] = prevEnd, prevStart
+        return legalBb
+
+    def pseudovalidMoves(self, index):
+        temp = self.board[index]
         if temp == "p":
             return self.pawnMoves(index)
         elif temp == "n":
-            return self.knightMoves[index]
+            return self.validKnightMoves(index, False)
         elif temp == "q":
-            return self.queenMoves[index]
+            return self.queenAttack(index, False)
         elif temp == "b":
-            return self.bishopMoves[index]
+            return self.bishopAttack(index, False)
         elif temp == "r":
-            return self.rookMoves[index]
+            return self.rookAttack(index, False)
         elif temp == "k":
-            return self.kingMoves[index]
+            return self.validKingMoves(index, False)
+        elif temp == "P":
+            return self.pawnMoves(index)
+        elif temp == "N":
+            return self.validKnightMoves(index, True)
+        elif temp == "Q":
+            return self.queenAttack(index, True)
+        elif temp == "B":
+            return self.bishopAttack(index, True)
+        elif temp == "R":
+            return self.rookAttack(index, True)
+        elif temp == "K":
+            return self.validKingMoves(index, True)
         else:
             return 0
 
@@ -474,7 +522,7 @@ class Board:
         return result
     # first and knight moves and friendly team pieces to get overlap
     # then XOR knight moves with overlap to get valid knight moves
-    
+
     def validKnightMoves(self, index, blackIsEnemey):
         if blackIsEnemey:
             friendlyColor = self.bitboards["white"]
@@ -482,7 +530,7 @@ class Board:
             friendlyColor = self.bitboards["black"]
         overlap = self.knightMoves[index] & friendlyColor
         return self.knightMoves[index] ^ overlap
-        
+
     # toggles a bit
     def toggleBit(self, bitboard, index):
         return bitboard ^ 0b1 << index
@@ -516,7 +564,7 @@ class Board:
         while pieceBb > 0:
             index = self.bitboard2Index(pieceBb)
             pieceBb = self.toggleBit(pieceBb, index)
-            attacked |= self.validMoves(index)
+            attacked |= self.pseudovalidMoves(index)
         return attacked
 
     # function that returns the bitboard of the singular piece when given a board index
