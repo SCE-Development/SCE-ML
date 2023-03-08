@@ -39,14 +39,14 @@ class Board:
         )
 
         self.fileRank2index = {
-            "a1" : 0, "b1" : 1, "c1" : 2, "d1" : 3, "e1" : 4, "f1" : 5, "g1" : 6, "g1" : 7, 
-            "a2" : 8, "b2" : 9, "c2" : 10, "d2" : 11, "e2" : 12, "f2" : 13, "g2" : 14, "g2" : 15, 
-            "a3" : 16, "b3" : 17, "c3" : 18, "d3" : 19, "e3" : 20, "f3" : 21, "g3" : 22, "g3" : 23, 
-            "a4" : 24, "b4" : 25, "c4" : 26, "d4" : 27, "e4" : 28, "f4" : 29, "g4" : 30, "g4" : 31, 
-            "a5" : 32, "b5" : 33, "c5" : 34, "d5" : 35, "e5" : 36, "f5" : 37, "g5" : 38, "g5" : 39, 
-            "a6" : 40, "b6" : 41, "c6" : 42, "d6" : 43, "e6" : 44, "f6" : 45, "g6" : 46, "g6" : 47, 
-            "a7" : 48, "b7" : 49, "c7" : 50, "d7" : 51, "e7" : 52, "f7" : 53, "g7" : 54, "g7" : 55, 
-            "a8" : 56, "b8" : 57, "c8" : 58, "d8" : 59, "e8" : 60, "f8" : 61, "g8" : 62, "g8" : 63 
+            "a1" : 0, "b1" : 1, "c1" : 2, "d1" : 3, "e1" : 4, "f1" : 5, "g1" : 6, "h1" : 7, 
+            "a2" : 8, "b2" : 9, "c2" : 10, "d2" : 11, "e2" : 12, "f2" : 13, "g2" : 14, "h2" : 15, 
+            "a3" : 16, "b3" : 17, "c3" : 18, "d3" : 19, "e3" : 20, "f3" : 21, "g3" : 22, "h3" : 23, 
+            "a4" : 24, "b4" : 25, "c4" : 26, "d4" : 27, "e4" : 28, "f4" : 29, "g4" : 30, "h4" : 31, 
+            "a5" : 32, "b5" : 33, "c5" : 34, "d5" : 35, "e5" : 36, "f5" : 37, "g5" : 38, "h5" : 39, 
+            "a6" : 40, "b6" : 41, "c6" : 42, "d6" : 43, "e6" : 44, "f6" : 45, "g6" : 46, "h6" : 47, 
+            "a7" : 48, "b7" : 49, "c7" : 50, "d7" : 51, "e7" : 52, "f7" : 53, "g7" : 54, "h7" : 55, 
+            "a8" : 56, "b8" : 57, "c8" : 58, "d8" : 59, "e8" : 60, "f8" : 61, "g8" : 62, "h8" : 63 
         }
 
         self.fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -80,6 +80,7 @@ class Board:
             "whiteatk": 0b0,
             "blackatk": 0b0,
             "occupancy": 0b0,
+            ".": 0
         }
 
         self.fileMasks = {
@@ -434,38 +435,52 @@ class Board:
     def queenMovesGen(self, index):
         return self.rookMovesGen(index) | self.bishopMovesGen(index)
 
-    def makeMove(self, start, end):
-        if (0b1 << end & self.validMoves(start)):
+    def makeMove(self, start, end, isBlack):
+        color = "white"
+        if isBlack:
+            color = "black"
+        #self.printBitboard(self.bitboards[color])
+        #print()
+        if 0b1 << start & self.bitboards[color] and 0b1 << end & self.validMoves(start, isBlack):
+            if self.board[end] != ".":
+                self.bitboards[self.board[end]] = self.toggleBit(self.bitboards[self.board[end]], end)
+            #self.printBitboard(self.bitboards[self.board[end]])
+            #print(self.board[end])
+            self.bitboards[self.board[start]] = self.toggleBit(self.toggleBit(self.bitboards[self.board[start]], start), end)
+            #self.printBitboard(self.bitboards[self.board[start]])
+            #print(self.board[start])
             self.board[end], self.board[start] = self.board[start], "."
-            self.toggleBit(self.bitboards[self.board[end]], end)
-            self.toggleBit(self.bitboards[self.board[end]], start)
+            self.bitboards["white"] = self.bitboards['B'] | self.bitboards['N'] | self.bitboards['R'] | self.bitboards['Q'] | self.bitboards['P']
+            self.bitboards["black"] = self.bitboards['b'] | self.bitboards['n'] | self.bitboards['r'] | self.bitboards['q'] | self.bitboards['p'] 
+            return True
         else:
             print("Not a valid move")
+            return False
 
-    def validMoves(self, index):
+    def validMoves(self, index, isBlack):
         temp = self.board[index].lower()
         if temp == "p":
             return self.pawnMoves(index)
         elif temp == "n":
-            return self.knightMoves[index]
+            return self.validKnightMoves(index, isBlack)
         elif temp == "q":
             return self.queenMoves[index]
         elif temp == "b":
-            return self.bishopMoves[index]
+            return self.bishopAttack(index, isBlack)
         elif temp == "r":
-            return self.rookMoves[index]
+            return self.rookAttack(index, isBlack)
         elif temp == "k":
-            return self.kingMoves[index]
+            return self.validKnightMoves(index, isBlack)
         else:
             return 0
 
-    def validKingMoves(self, index, blackIsEnemy):
-        if blackIsEnemy:
-            return (self.kingMoves[index] | 0b1 << index) & (self.bitboards["blackatk"] | self.bitboards["white"]) ^ (self.kingMoves[index] | 0b1 << index)
-        return (self.kingMoves[index] & (self.bitboards["whiteatk"] | self.bitboards["black"])) ^ (self.kingMoves[index] | 0b1 << index)
+    def validKingMoves(self, index, isBlack):
+        if isBlack:
+            return (self.kingMoves[index] | 0b1 << index) & (self.bitboards["whiteatk"] | self.bitboards["black"]) ^ (self.kingMoves[index] | 0b1 << index)
+        return (self.kingMoves[index] & (self.bitboards["blackatk"] | self.bitboards["white"])) ^ (self.kingMoves[index] | 0b1 << index)
 
-    def check(self, index, blackIsEnemy):
-        moves = self.validKingMoves(index, blackIsEnemy)
+    def check(self, index, isBlack):
+        moves = self.validKingMoves(index, isBlack)
         if moves == 0:
             print("Checkmate")
             return -1
@@ -486,11 +501,11 @@ class Board:
     # first and knight moves and friendly team pieces to get overlap
     # then XOR knight moves with overlap to get valid knight moves
     
-    def validKnightMoves(self, index, blackIsEnemey):
-        if blackIsEnemey:
-            friendlyColor = self.bitboards["white"]
-        else:
+    def validKnightMoves(self, index, isBlack):
+        if isBlack:
             friendlyColor = self.bitboards["black"]
+        else:
+            friendlyColor = self.bitboards["white"]
         overlap = self.knightMoves[index] & friendlyColor
         return self.knightMoves[index] ^ overlap
         
@@ -521,13 +536,16 @@ class Board:
                     enemyMask |= self.bitboards[key]
         return enemyMask
 
-    def attackedSquares(self, color):
+    def attackedSquares(self, isBlack):
+        color = "white"
+        if isBlack:
+            color = 'black'
         pieceBb = self.bitboards[color]
         attacked = 0b0
         while pieceBb > 0:
             index = self.bitboard2Index(pieceBb)
             pieceBb = self.toggleBit(pieceBb, index)
-            attacked |= self.validMoves(index)
+            attacked |= self.validMoves(index, isBlack)
         return attacked
 
     # function that returns the bitboard of the singular piece when given a board index
@@ -594,41 +612,7 @@ class Board:
 
 ########################################
 brd = Board()
-brd2 = Board()
 brd.board2Bitboard()
-# brd.fen2Board("bbrknqnr/pppppppp/8/8/8/8/PPPPPPPP/BBRKNQNR w KQkq - 0 1")
-# brd.printBitboard(brd.toggleBit(brd.knightMoves[34], 34))
-# brd.printBitboard(brd.queenMoves[19])
 
-# brd.printBoard()
+brd.makeMove(12, 28, False)
 
-# print("---------------")
-
-# index = 49
-
-# brd.printBitboard(brd.bitboards["blackatk"])
-# print()
-# brd.printBitboard(brd.kingMoves[index])
-# print()
-# brd.printBitboard(brd.validKingMoves(index, True))
-# brd.check(index, True)
-
-index = 35
-brd.check(index, True)
-# 5543124099779721288, 18446462598732906495, 18429224188100345855
-brd.bitboards['occupancy'] = 18429224188100345855
-# 65535 #13889313184910721216 #18374969058471772417
-brd.bitboards['white'] = 18374969058471772417
-print("\nBoard Occupancy")
-brd.printBitboard(brd.bitboards['occupancy'])
-print("\nAlly White Pieces")
-brd.printBitboard(brd.bitboards['white'])
-print("\nWhite Bishop Moves for index:" + str(index))
-brd.printBitboard(brd.bishopMoves[index])
-print("\nWhite Bishop Moves for index:" + str(index)+" with blockers")
-brd.printBitboard(brd.bishopAttack(index, False))
-print("\nWhite Rook Moves for index:" + str(index))
-brd.printBitboard(brd.rookMoves[index])
-print("\nWhite Rook Moves for index:" + str(index)+" with blockers")
-brd.printBitboard(brd.rookAttack(index, False))
-print("\n")
