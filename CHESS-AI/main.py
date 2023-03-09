@@ -7,6 +7,8 @@ validMove = False
 
 brd = cb.Board()
 brd.board2Bitboard()
+brd.printBoard()
+print()
 while play:
     move = ""
     if color:

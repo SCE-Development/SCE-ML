@@ -53,8 +53,8 @@ class Board:
 
         self.board = [
             "R", "N", "B", "Q", "K", "B", "N", "R",
-            "P", "P", "P", "P", "P", "P", "P", "P",
-            ".", ".", ".", ".", ".", ".", ".", ".",
+            "P", "P", "P", "P", ".", "P", "P", "P",
+            ".", ".", ".", ".", "P", ".", ".", ".",
             ".", ".", ".", ".", ".", ".", ".", ".",
             ".", ".", ".", ".", ".", ".", ".", ".",
             ".", ".", ".", ".", ".", ".", ".", ".",
@@ -208,8 +208,8 @@ class Board:
                     self.bitboards[key] = self.bitboards[key] << 1 | 0b1
                 else:
                     self.bitboards[key] = self.bitboards[key] << 1
-        self.bitboards["white"] = self.bitboards['B'] | self.bitboards['N'] | self.bitboards['R'] | self.bitboards['Q'] | self.bitboards['P']
-        self.bitboards["black"] = self.bitboards['b'] | self.bitboards['n'] | self.bitboards['r'] | self.bitboards['q'] | self.bitboards['p']
+        self.bitboards["white"] = self.bitboards['B'] | self.bitboards['N'] | self.bitboards['R'] | self.bitboards['Q'] | self.bitboards['P'] | self.bitboards['K']
+        self.bitboards["black"] = self.bitboards['b'] | self.bitboards['n'] | self.bitboards['r'] | self.bitboards['q'] | self.bitboards['p'] | self.bitboards['k']
         self.bitboards["whiteatk"] = self.attackedSquares("white")
         self.bitboards["blackatk"] = self.attackedSquares("black")
 
@@ -450,8 +450,8 @@ class Board:
             #self.printBitboard(self.bitboards[self.board[start]])
             #print(self.board[start])
             self.board[end], self.board[start] = self.board[start], "."
-            self.bitboards["white"] = self.bitboards['B'] | self.bitboards['N'] | self.bitboards['R'] | self.bitboards['Q'] | self.bitboards['P']
-            self.bitboards["black"] = self.bitboards['b'] | self.bitboards['n'] | self.bitboards['r'] | self.bitboards['q'] | self.bitboards['p'] 
+            self.bitboards["white"] = self.bitboards['B'] | self.bitboards['N'] | self.bitboards['R'] | self.bitboards['Q'] | self.bitboards['P'] | self.bitboards["K"]
+            self.bitboards["black"] = self.bitboards['b'] | self.bitboards['n'] | self.bitboards['r'] | self.bitboards['q'] | self.bitboards['p'] | self.bitboards['k']
             return True
         else:
             print("Not a valid move")
@@ -470,14 +470,14 @@ class Board:
         elif temp == "r":
             return self.rookAttack(index, isBlack)
         elif temp == "k":
-            return self.validKnightMoves(index, isBlack)
+            return self.validKingMoves(index, isBlack)
         else:
             return 0
 
     def validKingMoves(self, index, isBlack):
         if isBlack:
-            return (self.kingMoves[index] | 0b1 << index) & (self.bitboards["whiteatk"] | self.bitboards["black"]) ^ (self.kingMoves[index] | 0b1 << index)
-        return (self.kingMoves[index] & (self.bitboards["blackatk"] | self.bitboards["white"])) ^ (self.kingMoves[index] | 0b1 << index)
+            return (self.kingMoves[index] & (self.bitboards["whiteatk"] | self.bitboards["black"])) ^ self.kingMoves[index]
+        return (self.kingMoves[index] & (self.bitboards["blackatk"] | self.bitboards["white"])) ^ self.kingMoves[index]
 
     def check(self, index, isBlack):
         moves = self.validKingMoves(index, isBlack)
@@ -492,6 +492,7 @@ class Board:
 
     # returns an integer that has its bits reversed
     def bitSwap(self, n):
+        #return 18446744073709551615 - n (i think this works correctly??)
         result = 0
         for i in range(64):
             result <<= 1
@@ -614,5 +615,4 @@ class Board:
 brd = Board()
 brd.board2Bitboard()
 
-brd.makeMove(12, 28, False)
-
+#brd.printBitboard(brd.validKingMoves(4, False))
