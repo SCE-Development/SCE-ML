@@ -334,7 +334,7 @@ class Board:
             atk_f += 1
         return bishopBb
 
-    def bishopAttack(self, index, blackIsEnemy: bool):
+    def bishopAttack(self, index, isBlack: bool):
         uint64 = 18446744073709551615
 
         # foreslash (northeast and southwest)
@@ -359,9 +359,9 @@ class Board:
         forwardRays = forwardRays ^ self.bitSwap(backRays)
         nonForeRays = forwardRays & atk_mask
 
-        color = 'black'
-        if blackIsEnemy:
-            color = 'white'
+        color = 'white'
+        if isBlack:
+            color = 'black'
 
         rays = foreRays | nonForeRays
 
@@ -391,7 +391,7 @@ class Board:
             atk_f -= 1
         return rookBb
 
-    def rookAttack(self, index, blackIsEnemy: bool):
+    def rookAttack(self, index, isBlack: bool):
 
         file = index % 8
         # Vertical Rays
@@ -418,9 +418,9 @@ class Board:
         rightRay = rightRay ^ self.bitSwap(leftRay)
         Horizontal = rightRay & atk_mask
 
-        color = 'black'
-        if blackIsEnemy:
-            color = 'white'
+        color = 'white'
+        if isBlack:
+            color = 'black'
 
         rays = Vertical | Horizontal
 
@@ -430,8 +430,8 @@ class Board:
     def queenMovesGen(self, index):
         return self.rookMovesGen(index) | self.bishopMovesGen(index)
 
-    def queenAttack(self, index, blackIsEnemy: bool):
-        return self.rookAttack(index, blackIsEnemy) | self.bishopAttack(index, blackIsEnemy)
+    def queenAttack(self, index, isBlack: bool):
+        return self.rookAttack(index, isBlack) | self.bishopAttack(index, isBlack)
 
     def makeMove(self, start, end):
         if (0b1 << end & self.pseudovalidMoves(start)):
@@ -466,37 +466,37 @@ class Board:
         if temp == "p":
             return self.pawnMoves(index)
         elif temp == "n":
-            return self.validKnightMoves(index, False)
+            return self.validKnightMoves(index, True)
         elif temp == "q":
-            return self.queenAttack(index, False)
+            return self.queenAttack(index, True)
         elif temp == "b":
-            return self.bishopAttack(index, False)
+            return self.bishopAttack(index, True)
         elif temp == "r":
-            return self.rookAttack(index, False)
+            return self.rookAttack(index, True)
         elif temp == "k":
-            return self.validKingMoves(index, False)
+            return self.validKingMoves(index, True)
         elif temp == "P":
             return self.pawnMoves(index)
         elif temp == "N":
-            return self.validKnightMoves(index, True)
+            return self.validKnightMoves(index, False)
         elif temp == "Q":
-            return self.queenAttack(index, True)
+            return self.queenAttack(index, False)
         elif temp == "B":
-            return self.bishopAttack(index, True)
+            return self.bishopAttack(index, False)
         elif temp == "R":
-            return self.rookAttack(index, True)
+            return self.rookAttack(index, False)
         elif temp == "K":
-            return self.validKingMoves(index, True)
+            return self.validKingMoves(index, False)
         else:
             return 0
 
-    def validKingMoves(self, index, blackIsEnemy):
-        if not blackIsEnemy:
+    def validKingMoves(self, index, isBlack):
+        if isBlack:
             return (self.kingMoves[index] & (self.bitboards["whiteatk"] | self.bitboards["black"])) ^ self.kingMoves[index]
         return (self.kingMoves[index] & (self.bitboards["blackatk"] | self.bitboards["white"])) ^ self.kingMoves[index]
 
-    def check(self, index, blackIsEnemy):
-        moves = self.validKingMoves(index, blackIsEnemy)
+    def check(self, index, isBlack):
+        moves = self.validKingMoves(index, isBlack)
         if moves == 0:
             print("Checkmate")
             return -1
@@ -538,17 +538,17 @@ class Board:
                 pieceMask |= self.bitboards[key]
         return pieceMask
 
-    # given a boolean blackIsEnemy, if true, then generates bitboard mask of all black pieces
-    # otherwise generates bitboard mask for white pieces
-    def enemyMask(self, blackIsEnemy):
+    # given a boolean isBlack, if true, then generates bitboard mask of all white pieces
+    # otherwise generates bitboard mask for black pieces
+    def enemyMask(self, isBlack):
         enemyMask = 0b0
-        if blackIsEnemy:
+        if isBlack:
             for key in self.bitboards.keys():
-                if key.islower():
+                if key.isupper():
                     enemyMask |= self.bitboards[key]
         else:
             for key in self.bitboards.keys():
-                if key.isupper():
+                if key.islower():
                     enemyMask |= self.bitboards[key]
         return enemyMask
 
