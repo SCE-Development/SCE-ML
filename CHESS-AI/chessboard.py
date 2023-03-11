@@ -68,7 +68,6 @@ class Board:
             "black": 0b0,
             "whiteatk": 0b0,
             "blackatk": 0b0,
-            "occupancy": 0b0,
         }
 
         self.fileMasks = {
@@ -196,8 +195,10 @@ class Board:
                     self.bitboards[key] = self.bitboards[key] << 1 | 0b1
                 else:
                     self.bitboards[key] = self.bitboards[key] << 1
-        self.bitboards["white"] = self.bitboards['B'] | self.bitboards['N'] | self.bitboards['R'] | self.bitboards['Q'] | self.bitboards['P']
-        self.bitboards["black"] = self.bitboards['b'] | self.bitboards['n'] | self.bitboards['r'] | self.bitboards['q'] | self.bitboards['p']
+        self.bitboards["white"] = self.bitboards['B'] | self.bitboards['N'] | self.bitboards[
+            'R'] | self.bitboards['Q'] | self.bitboards['P'] | self.bitboards['K']
+        self.bitboards["black"] = self.bitboards['b'] | self.bitboards['n'] | self.bitboards[
+            'r'] | self.bitboards['q'] | self.bitboards['p'] | self.bitboards['k']
         self.bitboards["whiteatk"] = self.attackedSquares("white")
         self.bitboards["blackatk"] = self.attackedSquares("black")
 
@@ -334,7 +335,7 @@ class Board:
         # foreslash (northeast and southwest)
         atk_mask = self.bishopForeslash[index]
         pieceBb = self.index2Bitboard(index)
-        occBb = self.bitboards['occupancy']
+        occBb = self.bitboards['white'] | self.bitboards['black']
         forwardRays = occBb & atk_mask
         backRays = self.bitSwap(forwardRays)
         forwardRays = (forwardRays - pieceBb)
@@ -342,10 +343,10 @@ class Board:
         forwardRays = forwardRays ^ self.bitSwap(backRays)
         foreRays = forwardRays & atk_mask
 
-        # backslash (northweast and southeast)
+        # backslash (northwest and southeast)
         atk_mask = self.bishopBackslash[index]
         pieceBb = self.index2Bitboard(index)
-        occBb = self.bitboards['occupancy']
+        occBb = self.bitboards['white'] | self.bitboards['black']
         forwardRays = occBb & atk_mask
         backRays = self.bitSwap(forwardRays)
         forwardRays = (forwardRays - pieceBb)
@@ -386,15 +387,16 @@ class Board:
         return rookBb
 
     def rookAttack(self, index, blackIsEnemy: bool):
-        uint64 = 18446744073709551615
+
         file = index % 8
         # Vertical Rays
         atk_mask = self.fileMasks[file]
         pieceBb = self.index2Bitboard(index)
-        occBb = self.bitboards['occupancy']
-        upRay = occBb & atk_mask
+        occBb = self.bitboards['white'] | self.bitboards['black']
+        upRay = occBb & atk_mask - pieceBb
         downRay = self.bitSwap(upRay)
         upRay = (upRay - pieceBb)
+
         downRay = downRay - self.bitSwap(pieceBb)
         upRay = upRay ^ self.bitSwap(downRay)
         Vertical = upRay & atk_mask
@@ -403,8 +405,8 @@ class Board:
         # Horizontal Rays (northweast and southeast)
         atk_mask = self.rankMasks[rank]
         pieceBb = self.index2Bitboard(index)
-        occBb = self.bitboards['occupancy']
-        rightRay = occBb & atk_mask
+        occBb = self.bitboards['white'] | self.bitboards['black']
+        rightRay = occBb & atk_mask - pieceBb
         leftRay = self.bitSwap(rightRay)
         rightRay = (rightRay - pieceBb)
         leftRay = leftRay - self.bitSwap(pieceBb)
@@ -447,24 +449,23 @@ class Board:
             print("Not a legal move")
 
     def legalMoves(self, index):
-        legalBb, pseudoBb = self.pseudovalidMoves(index)
-        kingindex = self.bitboards["k"]
+        legalBb = self.pseudovalidMoves(index)
+        pseudoBb = self.pseudovalidMoves(index)
+        kingindex = self.bitboard2Index(self.bitboards["k"])
         if (self.board[index].isupper()):
 
-            kingindex = self.bitboards["K"]
+            kingindex = self.bitboard2Index(self.bitboards["K"])
 
         while pseudoBb > 0:
-            end = self.bitboard2Index(pieceBb)
-            pieceBb = self.toggleBit(pieceBb, index)
+            end = self.bitboard2Index(pseudoBb)
             prevEnd, prevStart = self.board[end], self.board[index]
+            prevBb = self.bitboards[self.board[index]],
             self.makeMove(index, end)
             if(self.check(kingindex, self.board[index].isupper()) == -1):
                 legalBb = self.toggleBit(legalBb, end)
-            self.bitboards[self.board[end]] = self.toggleBit(
-                self.bitboards[self.board[end]], end)
-            self.bitboards[self.board[end]] = self.toggleBit(
-                self.bitboards[self.board[end]], index)
+            self.bitboards[self.board[index]] = prevBb
             self.board[end], self.board[index] = prevEnd, prevStart
+            pseudoBb = self.toggleBit(pseudoBb, end)
         return legalBb
 
     def pseudovalidMoves(self, index):
@@ -499,7 +500,7 @@ class Board:
     def validKingMoves(self, index, blackIsEnemy):
         if blackIsEnemy:
             return (self.kingMoves[index] | 0b1 << index) & (self.bitboards["blackatk"] | self.bitboards["white"]) ^ (self.kingMoves[index] | 0b1 << index)
-        return (self.kingMoves[index] & (self.bitboards["whiteatk"] | self.bitboards["black"])) ^ (self.kingMoves[index] | 0b1 << index)
+        return (self.kingMoves[index] | 0b1 << index) & (self.bitboards["whiteatk"] | self.bitboards["black"]) ^ (self.kingMoves[index] | 0b1 << index)
 
     def check(self, index, blackIsEnemy):
         moves = self.validKingMoves(index, blackIsEnemy)
@@ -512,7 +513,7 @@ class Board:
         print("Not in Check")
         return 1
 
-    # returns an integer that has its bits reversed
+    # returns an integer that has its bit order reversed, endianess is reversed.
     def bitSwap(self, n):
         result = 0
         for i in range(64):
@@ -564,7 +565,7 @@ class Board:
         while pieceBb > 0:
             index = self.bitboard2Index(pieceBb)
             pieceBb = self.toggleBit(pieceBb, index)
-            attacked |= self.pseudovalidMoves(index)
+            attacked = attacked | self.pseudovalidMoves(index)
         return attacked
 
     # function that returns the bitboard of the singular piece when given a board index
@@ -631,41 +632,26 @@ class Board:
 
 ########################################
 brd = Board()
-brd2 = Board()
+
+brd.board = [
+    ".", ".", ".", ".", ".", ".", ".", ".",
+    ".", ".", ".", ".", ".", ".", ".", ".",
+    ".", ".", ".", ".", ".", ".", ".", ".",
+    ".", "k", ".", ".", "r", ".", ".", "R",
+    ".", ".", ".", ".", ".", ".", ".", ".",
+    ".", ".", ".", ".", ".", ".", ".", ".",
+    ".", ".", ".", ".", ".", ".", ".", ".",
+    ".", ".", ".", ".", ".", ".", ".", "."
+]
+
+
 brd.board2Bitboard()
-# brd.fen2Board("bbrknqnr/pppppppp/8/8/8/8/PPPPPPPP/BBRKNQNR w KQkq - 0 1")
-# brd.printBitboard(brd.toggleBit(brd.knightMoves[34], 34))
-# brd.printBitboard(brd.queenMoves[19])
-
-# brd.printBoard()
-
-# print("---------------")
-
-# index = 49
-
-# brd.printBitboard(brd.bitboards["blackatk"])
-# print()
-# brd.printBitboard(brd.kingMoves[index])
-# print()
-# brd.printBitboard(brd.validKingMoves(index, True))
-# brd.check(index, True)
-
-index = 35
-brd.check(index, True)
-# 5543124099779721288, 18446462598732906495, 18429224188100345855
-brd.bitboards['occupancy'] = 18429224188100345855
-# 65535 #13889313184910721216 #18374969058471772417
-brd.bitboards['white'] = 18374969058471772417
-print("\nBoard Occupancy")
-brd.printBitboard(brd.bitboards['occupancy'])
-print("\nAlly White Pieces")
-brd.printBitboard(brd.bitboards['white'])
-print("\nWhite Bishop Moves for index:" + str(index))
-brd.printBitboard(brd.bishopMoves[index])
-print("\nWhite Bishop Moves for index:" + str(index)+" with blockers")
-brd.printBitboard(brd.bishopAttack(index, False))
-print("\nWhite Rook Moves for index:" + str(index))
-brd.printBitboard(brd.rookMoves[index])
-print("\nWhite Rook Moves for index:" + str(index)+" with blockers")
-brd.printBitboard(brd.rookAttack(index, False))
+brd.printBoard()
 print("\n")
+brd.printBitboard(brd.bitboards['black'])
+print("\n")
+brd.printBitboard(brd.bitboards['blackatk'])
+print("\n")
+brd.printBitboard(brd.legalMoves(28))
+print("\n")
+brd.printBitboard(brd.rookAttack(29, True))
