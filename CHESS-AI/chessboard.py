@@ -186,11 +186,16 @@ class Board:
     # function that takes the current board of the Board object and generates piece bitboards in the bitboards dictionary
 
     def board2Bitboard(self):
+
+        for key in self.bitboards.keys():
+            self.bitboards[key] = 0b0
+
         # iterates over board
         for pieceIndex in range(63, -1, -1):
             # iterates of the keys of bitboards dictionary, if the piece == key, then a 1 bit is appended to the piece bitboard
             # otherwise the piece bitboard is shifted 1 to the left (append a 0 bit)
             for key in self.bitboards.keys():
+
                 if self.board[pieceIndex] == key:
                     self.bitboards[key] = self.bitboards[key] << 1 | 0b1
                 else:
@@ -430,41 +435,29 @@ class Board:
 
     def makeMove(self, start, end):
         if (0b1 << end & self.pseudovalidMoves(start)):
-            self.board[end], self.board[start] = self.board[start], "."
-            self.bitboards[self.board[end]] = self.toggleBit(
-                self.bitboards[self.board[end]], end)
-            self.bitboards[self.board[end]] = self.toggleBit(
-                self.bitboards[self.board[end]], start)
+            self.board[end] = self.board[start]
+            self.board[start] = "."
         else:
             print("Not a pseudovalid move")
-
-    def makeLegalMove(self, start, end):
-        if (0b1 << end & self.legalMoves(start)):
-            self.board[end], self.board[start] = self.board[start], "."
-            self.bitboards[self.board[end]] = self.toggleBit(
-                self.bitboards[self.board[end]], end)
-            self.bitboards[self.board[end]] = self.toggleBit(
-                self.bitboards[self.board[end]], start)
-        else:
-            print("Not a legal move")
 
     def legalMoves(self, index):
         legalBb = self.pseudovalidMoves(index)
         pseudoBb = self.pseudovalidMoves(index)
-        kingindex = self.bitboard2Index(self.bitboards["k"])
+        enemyatk = 'whiteatk'
+        king = 'k'
         if (self.board[index].isupper()):
-
-            kingindex = self.bitboard2Index(self.bitboards["K"])
+            enemyatk = 'blackatk'
+            king = 'K'
 
         while pseudoBb > 0:
             end = self.bitboard2Index(pseudoBb)
             prevEnd, prevStart = self.board[end], self.board[index]
-            prevBb = self.bitboards[self.board[index]],
             self.makeMove(index, end)
-            if(self.check(kingindex, self.board[index].isupper()) == -1):
+            self.board2Bitboard()
+            if(self.bitboards[king] & self.bitboards[enemyatk]):
                 legalBb = self.toggleBit(legalBb, end)
-            self.bitboards[self.board[index]] = prevBb
             self.board[end], self.board[index] = prevEnd, prevStart
+            self.board2Bitboard()
             pseudoBb = self.toggleBit(pseudoBb, end)
         return legalBb
 
@@ -498,9 +491,9 @@ class Board:
             return 0
 
     def validKingMoves(self, index, blackIsEnemy):
-        if blackIsEnemy:
-            return (self.kingMoves[index] | 0b1 << index) & (self.bitboards["blackatk"] | self.bitboards["white"]) ^ (self.kingMoves[index] | 0b1 << index)
-        return (self.kingMoves[index] | 0b1 << index) & (self.bitboards["whiteatk"] | self.bitboards["black"]) ^ (self.kingMoves[index] | 0b1 << index)
+        if not blackIsEnemy:
+            return (self.kingMoves[index] & (self.bitboards["whiteatk"] | self.bitboards["black"])) ^ self.kingMoves[index]
+        return (self.kingMoves[index] & (self.bitboards["blackatk"] | self.bitboards["white"])) ^ self.kingMoves[index]
 
     def check(self, index, blackIsEnemy):
         moves = self.validKingMoves(index, blackIsEnemy)
@@ -634,14 +627,16 @@ class Board:
 brd = Board()
 
 brd.board = [
+    ".", "K", ".", ".", ".", ".", ".", ".",
+    ".", ".", ".", ".", "p", ".", ".", ".",
     ".", ".", ".", ".", ".", ".", ".", ".",
+    ".", ".", ".", ".", "B", ".", "r", ".",
     ".", ".", ".", ".", ".", ".", ".", ".",
-    ".", ".", ".", ".", ".", ".", ".", ".",
-    ".", "k", ".", ".", "r", ".", ".", "R",
-    ".", ".", ".", ".", ".", ".", ".", ".",
-    ".", ".", ".", ".", ".", ".", ".", ".",
+    ".", ".", ".", ".", "p", ".", "b", ".",
     ".", ".", ".", ".", ".", ".", ".", ".",
     ".", ".", ".", ".", ".", ".", ".", "."
+
+
 ]
 
 
@@ -649,9 +644,9 @@ brd.board2Bitboard()
 brd.printBoard()
 print("\n")
 brd.printBitboard(brd.bitboards['black'])
-print("\n")
+print("\nBlack Attack")
 brd.printBitboard(brd.bitboards['blackatk'])
-print("\n")
+print("\nWhite Attack")
+brd.printBitboard(brd.bitboards['whiteatk'])
+print("\nLegal Moves of piece at e4")
 brd.printBitboard(brd.legalMoves(28))
-print("\n")
-brd.printBitboard(brd.rookAttack(29, True))
