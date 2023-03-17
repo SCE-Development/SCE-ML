@@ -196,18 +196,18 @@ class Board:
             17237620560088797200, 16100553540994408480, 13826139127340482880, 9205534180971414145
         )
 
-    # function that takes the current board of the Board object and generates piece bitboards in the bitboards dictionary
+    # function that takes self.board from the Board object and populates self.bitboards
 
     def board2Bitboard(self):
+
         # iterates over board
         for pieceIndex in range(63, -1, -1):
             # iterates of the keys of bitboards dictionary, if the piece == key, then a 1 bit is appended to the piece bitboard
             # otherwise the piece bitboard is shifted 1 to the left (append a 0 bit)
             for key in self.bitboards.keys():
+                self.bitboards[key] <<= 1
                 if self.board[pieceIndex] == key:
-                    self.bitboards[key] = self.bitboards[key] << 1 | 0b1
-                else:
-                    self.bitboards[key] = self.bitboards[key] << 1
+                    self.bitboards[key] |= 0b1
         self.bitboards["white"] = self.bitboards['B'] | self.bitboards['N'] | self.bitboards['R'] | self.bitboards['Q'] | self.bitboards['P'] | self.bitboards['K']
         self.bitboards["black"] = self.bitboards['b'] | self.bitboards['n'] | self.bitboards['r'] | self.bitboards['q'] | self.bitboards['p'] | self.bitboards['k']
         self.bitboards["whiteatk"] = self.attackedSquares("white")
@@ -461,21 +461,27 @@ class Board:
     def queenMovesGen(self, index):
         return self.rookMovesGen(index) | self.bishopMovesGen(index)
     
+
+    # given a starting index, ending index and color of piece, this function checks to see if the move is valid
+    # if it is valid, then the move is made by making the appropriate updates to self.board and self.bitboards    
+    # returns True if the move is successfully executed, false otherwise
     def makeMove(self, start, end, isBlack):
         color = "white"
         if isBlack:
             color = "black"
-        #self.printBitboard(self.bitboards[color])
-        #print()
         if 0b1 << start & self.bitboards[color] and 0b1 << end & self.validMoves(start, isBlack):
+
+            # if a piece is taken, then the bit corresponding to that index in the taken piece's bitboard is cleared
             if self.board[end] != ".":
                 self.bitboards[self.board[end]] = self.toggleBit(self.bitboards[self.board[end]], end)
-            #self.printBitboard(self.bitboards[self.board[end]])
-            #print(self.board[end])
+            
+            # update the bitboard of the moved piece
             self.bitboards[self.board[start]] = self.toggleBit(self.toggleBit(self.bitboards[self.board[start]], start), end)
-            #self.printBitboard(self.bitboards[self.board[start]])
-            #print(self.board[start])
+
+            # update the board to represent to move
             self.board[end], self.board[start] = self.board[start], "."
+
+            # update the bitboards of white and black pieces
             self.bitboards["white"] = self.bitboards['B'] | self.bitboards['N'] | self.bitboards['R'] | self.bitboards['Q'] | self.bitboards['P'] | self.bitboards["K"]
             self.bitboards["black"] = self.bitboards['b'] | self.bitboards['n'] | self.bitboards['r'] | self.bitboards['q'] | self.bitboards['p'] | self.bitboards['k']
             return True
@@ -483,6 +489,7 @@ class Board:
             print("Not a valid move")
             return False
 
+    # wrapper function for all the move bitboard generators
     def validMoves(self, index, isBlack):
         temp = self.board[index].lower()
         if temp == "p":
@@ -507,8 +514,10 @@ class Board:
             return (self.kingMoves[index] & (self.bitboards["whiteatk"] | self.bitboards["black"])) ^ self.kingMoves[index]
         return (self.kingMoves[index] & (self.bitboards["blackatk"] | self.bitboards["white"])) ^ self.kingMoves[index]
 
+    # TODO: does not currently return value if in check
+    # the function returns the status of the game (Checkmate, stalemate, check, or nothing)
     def check(self, index, isBlack):
-        moves = self.validKingMoves(index, isBlack)
+        moves = self.validKingMoves(index, isBlack) | 0b1 << index
         if moves == 0:
             print("Checkmate")
             return -1
@@ -520,16 +529,16 @@ class Board:
 
     # returns an integer that has its bits reversed
     def bitSwap(self, n):
-        #return 18446744073709551615 - n (i think this works correctly??)
+        #return 18446744073709551615 - n (one's complement)
         result = 0
         for i in range(64):
             result <<= 1
             result |= n & 1
             n >>= 1
         return result
+
     # first and knight moves and friendly team pieces to get overlap
     # then XOR knight moves with overlap to get valid knight moves
-    
     def validKnightMoves(self, index, isBlack):
         if isBlack:
             friendlyColor = self.bitboards["black"]
@@ -542,20 +551,7 @@ class Board:
     def toggleBit(self, bitboard, index):
         return bitboard ^ 0b1 << index
 
-    # given a boolean blackIsEnemy, if true, then generates bitboard mask of all black pieces
-    # otherwise generates bitboard mask for white pieces
-    def enemyMask(self, blackIsEnemy):
-        enemyMask = 0b0
-        if blackIsEnemy:
-            for key in self.bitboards.keys():
-                if key.islower():
-                    enemyMask |= self.bitboards[key]
-        else:
-            for key in self.bitboards.keys():
-                if key.isupper():
-                    enemyMask |= self.bitboards[key]
-        return enemyMask
-
+    # returns bitboard of all squares attacked by the given color
     def attackedSquares(self, isBlack):
         color = "white"
         if isBlack:
