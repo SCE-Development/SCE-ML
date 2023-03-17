@@ -265,6 +265,8 @@ class Board:
             return kingBb & notAB
         return kingBb
 
+    # generates a bitboard of all possible moves a bishop could make at a given index
+    # ignores blockers
     def bishopMovesGen(self, index):
         uint64 = 18446744073709551615
         bishopBb = 0b0
@@ -296,6 +298,8 @@ class Board:
             atk_f += 1
         return bishopBb
 
+    # generates a bitboard of the northeast and southwest rays of a bishop
+    # ignores blockers
     def bishopForeslashGen(self, index):
         uint64 = 18446744073709551615
         bishopBb = 0b0
@@ -315,6 +319,8 @@ class Board:
             atk_f -= 1
         return bishopBb
 
+    # generates a bitboard of the northwest and southeast rays of a bishop
+    # ignores blockers
     def bishopBackslashGen(self, index):
         uint64 = 18446744073709551615
         bishopBb = 0b0
@@ -334,8 +340,10 @@ class Board:
             atk_f += 1
         return bishopBb
 
+    # Generates a bitboard of all possible moves of a bishop taking blockers into account
+    # includes piece capture moves
+    # does not check if the move leaves the king in check, making these pseudovalid moves.
     def bishopAttack(self, index, isBlack: bool):
-        uint64 = 18446744073709551615
 
         # foreslash (northeast and southwest)
         atk_mask = self.bishopForeslash[index]
@@ -368,6 +376,8 @@ class Board:
         atkBb = (rays ^ self.bitboards[color]) & rays
         return atkBb
 
+    # generates a bitboard of all possible moves a rook could make at a given index
+    # ignores blockers
     def rookMovesGen(self, index):
         uint64 = 18446744073709551615
         rookBb = 0b0
@@ -391,6 +401,9 @@ class Board:
             atk_f -= 1
         return rookBb
 
+    # Generates a bitboard of all possible moves of a rook taking blockers into account
+    # includes piece capture moves
+    # does not check if the move leaves the king in check, making these pseudovalid moves.
     def rookAttack(self, index, isBlack: bool):
 
         file = index % 8
@@ -427,12 +440,22 @@ class Board:
         atkBb = (rays ^ self.bitboards[color]) & rays
         return atkBb
 
+    # generates a bitboard of all possible moves a queen could make at a given index
+    # bitwise or of rook and bishop moves
+    # ignores blockers
     def queenMovesGen(self, index):
         return self.rookMovesGen(index) | self.bishopMovesGen(index)
 
+    # Generates a bitboard of all possible moves of a queen taking blockers into account
+    # includes piece capture moves
+    # bitwise or of the rookAttack and bishopAttack
+    # does not check if the move leaves the king in check, making these pseudovalid moves.
     def queenAttack(self, index, isBlack: bool):
         return self.rookAttack(index, isBlack) | self.bishopAttack(index, isBlack)
 
+    # Changes the element of the board at index end to the element at start
+    # The possible moves are based on pseudovalidMoves
+    # does not update the bitboards.
     def makeMove(self, start, end):
         if (0b1 << end & self.pseudovalidMoves(start)):
             self.board[end] = self.board[start]
@@ -440,6 +463,9 @@ class Board:
         else:
             print("Not a pseudovalid move")
 
+    # Calls makeMove on every possible pseudovalid moves of the piece at the given index.
+    # If the king is in check after the pseudovalid move, that move bit is toggled off
+    # returns a bitboard of all the legal moves
     def legalMoves(self, index):
         legalBb = self.pseudovalidMoves(index)
         pseudoBb = self.pseudovalidMoves(index)
@@ -461,6 +487,7 @@ class Board:
             pseudoBb = self.toggleBit(pseudoBb, end)
         return legalBb
 
+    # Returns a bitboard of the pseudovalid moves a piece could make at the given index.
     def pseudovalidMoves(self, index):
         temp = self.board[index]
         if temp == "p":
