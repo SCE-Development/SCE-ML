@@ -340,42 +340,66 @@ class Board:
             atk_f += 1
         return bishopBb
 
+#Bishop and Rook attacks are calculated by using the propagation of carry bits in bitwise subtraction to find a blocker. 
+#(in little endian convention)  
+#   01000011 occupied pieces
+# - 01000000 sliding piece
+#   00000011 blocker pieces   
+#The sliding piece is cleard from the occupancy board to set up for carry bit propagation. 
+#
+#   00000011 blocker pieces
+# - 01000000 sliding piece
+#   01111101 the carry bit is propagated until the bit before the blocker
+#  
+#     01000011 occupied pieces
+# xor 01111101 (blocker - sliding) piece
+#     00111110 gets the possible moves of the slider in the positive horizontal direction (including capture)
+#
+# This method only works in the positive direction and can only detect the first blocker in its propagation.
+# To get the positive direction moves, the bitboards involved have their endianess reversed with bitSwap() and the same calculations are made
+# To get multiple blockers in each propagation, the method is ran multiple times with different piece masks            
+#   https://www.chessprogramming.org/Efficient_Generation_of_Sliding_Piece_Attacks#Sliding_Attacks_by_Calculation
+#   https://www.chessprogramming.org/Subtracting_a_Rook_from_a_Blocking_Piece
+
+
     # Generates a bitboard of all possible moves of a bishop taking blockers into account
     # includes piece capture moves
     # does not check if the move leaves the king in check, making these pseudovalid moves.
     def bishopAttack(self, index, isBlack: bool):
 
         # foreslash (northeast and southwest)
-        atk_mask = self.bishopForeslash[index]
-        pieceBb = self.index2Bitboard(index)
-        occBb = self.bitboards['white'] | self.bitboards['black']
-        forwardRays = occBb & atk_mask
-        backRays = self.bitSwap(forwardRays)
-        forwardRays = (forwardRays - pieceBb)
-        backRays = backRays - self.bitSwap(pieceBb)
-        forwardRays = forwardRays ^ self.bitSwap(backRays)
-        foreRays = forwardRays & atk_mask
+        atk_mask = self.bishopForeslash[index]      # bitboard of northeast and southwest rays
+        pieceBb = self.index2Bitboard(index)        # position bitboard of current piece
+        occupancyBb = self.bitboards['white'] | self.bitboards['black']   # bitboard of all the pieces on the board, (including the current one)
+        positiveRayBb = occupancyBb & atk_mask      # bitboard to calculate northeast moves
+                                                    # Anding with the attack mask implicitly does the first subraction to clear the piece from the occupancy
+        negativeRayBb = self.bitSwap(positiveRayBb)        # Reversed bitboard to calculate southwest moves
+        positiveRayBb = (positiveRayBb - pieceBb)          # Subtraction to propagate carry bit
+        negativeRayBb = negativeRayBb - self.bitSwap(pieceBb)        
+        foreslashRays = positiveRayBb ^ self.bitSwap(negativeRayBb) #No need to xor with occupancy bitboard since the parts of each RayBb that were not affected by propagation are the same as occupancy.
+        foreslashRays = foreslashRays & atk_mask
 
         # backslash (northwest and southeast)
         atk_mask = self.bishopBackslash[index]
-        pieceBb = self.index2Bitboard(index)
-        occBb = self.bitboards['white'] | self.bitboards['black']
-        forwardRays = occBb & atk_mask
-        backRays = self.bitSwap(forwardRays)
-        forwardRays = (forwardRays - pieceBb)
-        backRays = backRays - self.bitSwap(pieceBb)
-        forwardRays = forwardRays ^ self.bitSwap(backRays)
-        nonForeRays = forwardRays & atk_mask
+        pieceBb = self.index2Bitboard(index)        
+        occupancyBb = self.bitboards['white'] | self.bitboards['black']  
+        positiveRayBb = occupancyBb & atk_mask                        
+        negativeRayBb = self.bitSwap(positiveRayBb)       
+        positiveRayBb = (positiveRayBb - pieceBb)         
+        negativeRayBb = negativeRayBb - self.bitSwap(pieceBb)        
+        backslashRays = positiveRayBb ^ self.bitSwap(negativeRayBb)
+        backslashRays = backslashRays & atk_mask
 
         color = 'white'
         if isBlack:
             color = 'black'
 
-        rays = foreRays | nonForeRays
+        rays = foreslashRays | backslashRays
 
-        atkBb = (rays ^ self.bitboards[color]) & rays
+        atkBb = (rays ^ self.bitboards[color]) & rays          #to remove moves that capture ally blockers
         return atkBb
 
+ 
     # generates a bitboard of all possible moves a rook could make at a given index
     # ignores blockers
     def rookMovesGen(self, index):
@@ -410,32 +434,31 @@ class Board:
         # Vertical Rays
         atk_mask = self.fileMasks[file]
         pieceBb = self.index2Bitboard(index)
-        occBb = self.bitboards['white'] | self.bitboards['black']
-        upRay = occBb & atk_mask - pieceBb
+        occupancyBb = self.bitboards['white'] | self.bitboards['black']
+        upRay = occupancyBb & atk_mask - pieceBb #need to perform additional subtraction since atk_mask doesn't clear position bit of the piece
         downRay = self.bitSwap(upRay)
         upRay = (upRay - pieceBb)
-
         downRay = downRay - self.bitSwap(pieceBb)
-        upRay = upRay ^ self.bitSwap(downRay)
-        Vertical = upRay & atk_mask
+        verticalRays = upRay ^ self.bitSwap(downRay)
+        verticalRays = verticalRays & atk_mask
 
         rank = index//8
         # Horizontal Rays (northweast and southeast)
         atk_mask = self.rankMasks[rank]
         pieceBb = self.index2Bitboard(index)
-        occBb = self.bitboards['white'] | self.bitboards['black']
-        rightRay = occBb & atk_mask - pieceBb
+        occupancyBb = self.bitboards['white'] | self.bitboards['black']
+        rightRay = occupancyBb & atk_mask - pieceBb
         leftRay = self.bitSwap(rightRay)
         rightRay = (rightRay - pieceBb)
         leftRay = leftRay - self.bitSwap(pieceBb)
-        rightRay = rightRay ^ self.bitSwap(leftRay)
-        Horizontal = rightRay & atk_mask
+        horizontalRays = rightRay ^ self.bitSwap(leftRay)
+        horizontalRays = horizontalRays & atk_mask
 
         color = 'white'
         if isBlack:
             color = 'black'
 
-        rays = Vertical | Horizontal
+        rays = verticalRays | horizontalRays
 
         atkBb = (rays ^ self.bitboards[color]) & rays
         return atkBb
@@ -468,23 +491,23 @@ class Board:
     # returns a bitboard of all the legal moves
     def legalMoves(self, index):
         legalBb = self.pseudovalidMoves(index)
-        pseudoBb = self.pseudovalidMoves(index)
+        tempBb = self.pseudovalidMoves(index) #temporary bitboard used to iterate all the bits on a bitboard.
         enemyatk = 'whiteatk'
         king = 'k'
         if (self.board[index].isupper()):
             enemyatk = 'blackatk'
             king = 'K'
 
-        while pseudoBb > 0:
-            end = self.bitboard2Index(pseudoBb)
+        while tempBb > 0: 
+            end = self.bitboard2Index(tempBb)
             prevEnd, prevStart = self.board[end], self.board[index]
             self.makeMove(index, end)
             self.board2Bitboard()
-            if(self.bitboards[king] & self.bitboards[enemyatk]):
+            if(self.bitboards[king] & self.bitboards[enemyatk]):        #Checks if king is in check
                 legalBb = self.toggleBit(legalBb, end)
             self.board[end], self.board[index] = prevEnd, prevStart
             self.board2Bitboard()
-            pseudoBb = self.toggleBit(pseudoBb, end)
+            tempBb = self.toggleBit(tempBb, end)
         return legalBb
 
     # Returns a bitboard of the pseudovalid moves a piece could make at the given index.
@@ -654,10 +677,10 @@ class Board:
 brd = Board()
 
 brd.board = [
-    ".", "K", ".", ".", ".", ".", ".", ".",
+    ".", ".", ".", ".", ".", ".", ".", ".",
     ".", ".", ".", ".", "p", ".", ".", ".",
     ".", ".", ".", ".", ".", ".", ".", ".",
-    ".", ".", ".", ".", "B", ".", "r", ".",
+    ".", "K", ".", ".", "R", ".", "r", ".",
     ".", ".", ".", ".", ".", ".", ".", ".",
     ".", ".", ".", ".", "p", ".", "b", ".",
     ".", ".", ".", ".", ".", ".", ".", ".",
