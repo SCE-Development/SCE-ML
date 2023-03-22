@@ -399,7 +399,7 @@ class Board:
 
         # foreslash (northeast and southwest)
         atk_mask = self.bishopForeslash[index]      # bitboard of northeast and southwest rays
-        pieceBb = self.index2Bitboard(index)        # position bitboard of current piece
+        pieceBb = 0b1 << index                      # position bitboard of current piece
         occupancyBb = self.bitboards['white'] | self.bitboards['black']   # bitboard of all the pieces on the board, (including the current one)
         positiveRayBb = occupancyBb & atk_mask      # bitboard to calculate northeast moves
                                                     # Anding with the attack mask implicitly does the first subraction to clear the piece from the occupancy
@@ -411,7 +411,7 @@ class Board:
 
         # backslash (northwest and southeast)
         atk_mask = self.bishopBackslash[index]
-        pieceBb = self.index2Bitboard(index)        
+        pieceBb = 0b1 << index       
         occupancyBb = self.bitboards['white'] | self.bitboards['black']  
         positiveRayBb = occupancyBb & atk_mask                        
         negativeRayBb = self.bitSwap(positiveRayBb)       
@@ -503,11 +503,8 @@ class Board:
     # given a starting index, ending index and color of piece, this function checks to see if the move is valid
     # if it is valid, then the move is made by making the appropriate updates to self.board and self.bitboards    
     # returns True if the move is successfully executed, false otherwise
-    def makeMove(self, start, end, isBlack):
-        color = "white"
-        if isBlack:
-            color = "black"
-        if 0b1 << start & self.bitboards[color] and 0b1 << end & self.validMoves(start, isBlack):
+    def makeMove(self, start, end):
+        if 0b1 << end & self.pseudovalidMoves(start):
 
             # if a piece is taken, then the bit corresponding to that index in the taken piece's bitboard is cleared
             if self.board[end] != ".":
@@ -533,16 +530,6 @@ class Board:
     # does not check if the move leaves the king in check, making these pseudovalid moves.
     def queenAttack(self, index, isBlack: bool):
         return self.rookAttack(index, isBlack) | self.bishopAttack(index, isBlack)
-
-    # Changes the element of the board at index end to the element at start
-    # The possible moves are based on pseudovalidMoves
-    # does not update the bitboards.
-    def makeMove(self, start, end):
-        if (0b1 << end & self.pseudovalidMoves(start)):
-            self.board[end] = self.board[start]
-            self.board[start] = "."
-        else:
-            print("Not a pseudovalid move")
 
     # Calls makeMove on every possible pseudovalid moves of the piece at the given index.
     # If the king is in check after the pseudovalid move, that move bit is toggled off
