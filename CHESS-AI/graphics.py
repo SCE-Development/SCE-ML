@@ -1,10 +1,12 @@
 import pygame
 
+
 class GUI:
     def __init__(self):
         self.SCREENWIDTH, self.SCREENHEIGHT = 1024, 1024
         pygame.init()
-        self.WIN = pygame.display.set_mode((self.SCREENWIDTH, self.SCREENHEIGHT))
+        self.WIN = pygame.display.set_mode(
+            (self.SCREENWIDTH, self.SCREENHEIGHT))
         pygame.display.set_caption("SCE Chess Bot")
         self.pieceImages = {
             "R": self.pieceToImg("wR"),
@@ -21,9 +23,6 @@ class GUI:
             "p": self.pieceToImg("bP")
         }
 
-
-
-
     def main(self):
         clock = pygame.time.Clock()
         run = True
@@ -34,10 +33,12 @@ class GUI:
                 if event.type == pygame.QUIT:  # exit button on top right
                     run = False
 
-    def pieceToImg(self, piece):    # given char representation, return a scaled image of the piece (e.g. b -> white bishop PNG)
+    # given char representation, return a scaled image of the piece (e.g. b -> white bishop PNG)
+    def pieceToImg(self, piece):
         return pygame.transform.scale(pygame.image.load(f"./Assets/{piece}.png"), (self.SCREENHEIGHT >> 3, self.SCREENHEIGHT >> 3))
 
-    def renderTest(self):                               # test board to print the starting condition of the board
+    # test board to print the starting condition of the board
+    def renderTest(self):
         testBoard = [
             "R", "N", "B", "K", "Q", "B", "N", "R",
             "P", "P", "P", "P", "P", "P", "P", "P",
@@ -50,7 +51,8 @@ class GUI:
         ]
         self.renderPieces(testBoard)
 
-    def renderPieces(self, boardList):                  # goes through 1D board array and renders pieces found
+    # goes through 1D board array and renders pieces found
+    def renderPieces(self, boardList):
         TILESIZE = min(self.SCREENWIDTH, self.SCREENHEIGHT) >> 3
         for i, piece in enumerate(boardList):
             if piece == ".":                            # "." denotes an empty square
@@ -63,15 +65,16 @@ class GUI:
             self.WIN.blit(self.pieceImages[piece], (x, y))
         pygame.display.update()
 
-
     def checkerPattern(self):
         TILESIZE = min(self.SCREENWIDTH, self.SCREENHEIGHT) >> 3
         LIGHTCOLOR = (240, 217, 181)                    # color of light square
         DARKCOLOR = (181, 136, 99)                      # color of dark square
-        colors = [LIGHTCOLOR, DARKCOLOR]                # put in list to easily alternate with modulo
+        # put in list to easily alternate with modulo
+        colors = [LIGHTCOLOR, DARKCOLOR]
         for col in range(8):
             for row in range(8):
-                tile = pygame.Rect(row * TILESIZE, col * TILESIZE, TILESIZE, TILESIZE)
+                tile = pygame.Rect(row * TILESIZE, col *
+                                   TILESIZE, TILESIZE, TILESIZE)
                 pygame.draw.rect(self.WIN, colors[(col + row) % 2], tile)
         pygame.display.update()
 
