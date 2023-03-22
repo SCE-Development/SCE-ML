@@ -12,7 +12,7 @@ class Board:
     # (FEN) A fen string.
     # (Bitboards) Bitboards are used to represent sets of pieces. These sets can represents a number of different
     # types of squares (pieces, attacked squares, possible moves, pieces blocking sliding pieces, etc) and can be
-    # manipulated efficientyly using set operations such as AND/OR. Piece bitboards are represented in a dictionary
+    # manipulated efficiently using bit operations such as AND/OR. Piece bitboards are represented in a dictionary
     # called bitboards that takes characters from the board representation as keys. Bitboards are 64 bit integers
     # where the least significant position (first bit) corresponds with a1 and the most significant position (64th bit)
     # corresponds with h8.
@@ -38,13 +38,24 @@ class Board:
                                            8), ("e", 8), ("f", 8), ("g", 8), ("h", 8)
         )
 
+        self.fileRank2index = {
+            "a1" : 0, "b1" : 1, "c1" : 2, "d1" : 3, "e1" : 4, "f1" : 5, "g1" : 6, "h1" : 7, 
+            "a2" : 8, "b2" : 9, "c2" : 10, "d2" : 11, "e2" : 12, "f2" : 13, "g2" : 14, "h2" : 15, 
+            "a3" : 16, "b3" : 17, "c3" : 18, "d3" : 19, "e3" : 20, "f3" : 21, "g3" : 22, "h3" : 23, 
+            "a4" : 24, "b4" : 25, "c4" : 26, "d4" : 27, "e4" : 28, "f4" : 29, "g4" : 30, "h4" : 31, 
+            "a5" : 32, "b5" : 33, "c5" : 34, "d5" : 35, "e5" : 36, "f5" : 37, "g5" : 38, "h5" : 39, 
+            "a6" : 40, "b6" : 41, "c6" : 42, "d6" : 43, "e6" : 44, "f6" : 45, "g6" : 46, "h6" : 47, 
+            "a7" : 48, "b7" : 49, "c7" : 50, "d7" : 51, "e7" : 52, "f7" : 53, "g7" : 54, "h7" : 55, 
+            "a8" : 56, "b8" : 57, "c8" : 58, "d8" : 59, "e8" : 60, "f8" : 61, "g8" : 62, "h8" : 63 
+        }
+
         self.fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
         self.board = [
             "R", "N", "B", "Q", "K", "B", "N", "R",
             "P", "P", "P", "P", "P", "P", "P", "P",
-            ".", ".", ".", ".", ".", ".", ".", ".",
-            ".", ".", ".", ".", ".", ".", ".", ".",
+            ".", "p", ".", ".", ".", ".", ".", ".",
+            "p", ".", ".", ".", ".", ".", ".", ".",
             ".", ".", ".", ".", ".", ".", ".", ".",
             ".", ".", ".", ".", ".", ".", ".", ".",
             "p", "p", "p", "p", "p", "p", "p", "p",
@@ -183,27 +194,22 @@ class Board:
             17237620560088797200, 16100553540994408480, 13826139127340482880, 9205534180971414145
         )
 
-    # function that takes the current board of the Board object and generates piece bitboards in the bitboards dictionary
+    # function that takes self.board from the Board object and populates self.bitboards
 
     def board2Bitboard(self):
 
         for key in self.bitboards.keys():
             self.bitboards[key] = 0b0
-
         # iterates over board
         for pieceIndex in range(63, -1, -1):
             # iterates of the keys of bitboards dictionary, if the piece == key, then a 1 bit is appended to the piece bitboard
             # otherwise the piece bitboard is shifted 1 to the left (append a 0 bit)
             for key in self.bitboards.keys():
-
+                self.bitboards[key] <<= 1
                 if self.board[pieceIndex] == key:
-                    self.bitboards[key] = self.bitboards[key] << 1 | 0b1
-                else:
-                    self.bitboards[key] = self.bitboards[key] << 1
-        self.bitboards["white"] = self.bitboards['B'] | self.bitboards['N'] | self.bitboards[
-            'R'] | self.bitboards['Q'] | self.bitboards['P'] | self.bitboards['K']
-        self.bitboards["black"] = self.bitboards['b'] | self.bitboards['n'] | self.bitboards[
-            'r'] | self.bitboards['q'] | self.bitboards['p'] | self.bitboards['k']
+                    self.bitboards[key] |= 0b1
+        self.bitboards["white"] = self.bitboards['B'] | self.bitboards['N'] | self.bitboards['R'] | self.bitboards['Q'] | self.bitboards['P'] | self.bitboards['K']
+        self.bitboards["black"] = self.bitboards['b'] | self.bitboards['n'] | self.bitboards['r'] | self.bitboards['q'] | self.bitboards['p'] | self.bitboards['k']
         self.bitboards["whiteatk"] = self.attackedSquares("white")
         self.bitboards["blackatk"] = self.attackedSquares("black")
 
@@ -216,11 +222,21 @@ class Board:
         # does not have code from stopping a white pawn from going from 8th rank to 9th and similarly for black
         # use this to & a binary string and limit to only 64 bits
         uint64 = 18446744073709551615
-        pawnBb = self.index2Bitboard(index)
-        pieceMask = self.pieceMask()
+        # create bitboards of the pawn and bitboard off all pieces on the board
+        pawnBb = 0b1 << index
+        pieceMask = self.bitboards["white"] | self.bitboards["black"]
+        # first if block determines the color of the piece
         if self.board[index] == "P":
+            # pawnForwardMask is mask of piece in front of a pawn. If the pawn is in the starting rank,
+            # then it also contains another set bit two spaces in front of the pawn
             pawnForwardMask = pawnBb << 8 if self.fileRank[index][1] != 2 else pawnBb << 8 | pawnBb << 16
             enemyMask = self.bitboards["black"]
+            # there are three cases for pawn attacks. If it is in the a file, then we will not check the square to front left for enemy
+            # if in the h file, then we will not check the square to the front right
+            # otherwise, we check both front left and right for an enemy piece
+
+            # general formula for generating pawn move and attack bitboard is as follows:
+            # (mask contain any enemy pieces blocking pawn) XOR (mask of square in front of pawn and any enemies that can be attacked by pawn)
             if self.fileRank[index][0] == "a":
                 return ((pawnForwardMask & pieceMask) | ((pawnBb << 8 & pieceMask) << 8)) ^ pawnForwardMask | pawnBb << 9 & enemyMask & uint64
             elif self.fileRank[index][0] == "h":
@@ -234,39 +250,53 @@ class Board:
             elif self.fileRank[index][0] == "h":
                 return ((pawnForwardMask & pieceMask) | ((pawnBb >> 8 & pieceMask) >> 8)) ^ pawnForwardMask | pawnBb >> 9 & enemyMask & uint64
             return ((pawnForwardMask & pieceMask) | ((pawnBb >> 8 & pieceMask) >> 8)) ^ pawnForwardMask | pawnBb >> 7 & enemyMask | pawnBb >> 9 & enemyMask & uint64
+        # returns 0 if the index does not refer to a pawn
         print("Not a Pawn")
         return 0
 
+    # used to generate knight moves bitboards for all squares (These values are stored in self.knightMoves)
+    #we do not call this function, it was only used to generate bitboards
     def knightMovesGen(self, index):
         # use this to & a binary string and limit to only 64 bits
         uint64 = 18446744073709551615
         notGH = 4557430888798830399
         notAB = 18229723555195321596
-        knightBb = self.index2Bitboard(index)
+        knightBb = 0b1 << index
+
+        # knight moves generated by OR'ing together shifted copies of the knight bitboard
         knightBb = (knightBb << 6 | knightBb << 10 | knightBb << 15 | knightBb << 17 |
                     knightBb >> 6 | knightBb >> 10 | knightBb >> 15 | knightBb >> 17) & uint64
+        
+        # if block ensures that moves do not wrap from one edge of the board to the other
         if self.fileRank[index][0] == "a" or self.fileRank[index][0] == "b":
             return knightBb & notGH
         elif self.fileRank[index][0] == "g" or self.fileRank[index][0] == "h":
             return knightBb & notAB
         return knightBb
 
+    # used to generate king moves bitboards for all squares (Values are stored in self.kingMoves)
+    # we do not call this function, it was only used to generate bitboards
     def kingMovesGen(self, index):
         # use this to & a binary string and limit to only 64 bits
         uint64 = 18446744073709551615
         notGH = 4557430888798830399
         notAB = 18229723555195321596
-        kingBb = self.index2Bitboard(index)
+        kingBb = 0b1 << index
+
+        # King moves are generated by OR'ing together 8 shifted copies of the king bitboard
         kingBb = (kingBb << 9 | kingBb << 8 | kingBb << 7 | kingBb << 1 |
                   kingBb >> 1 | kingBb >> 7 | kingBb >> 8 | kingBb >> 9) & uint64
+        
+        # this if block is used to avoid king moves from wrapping around to the opposite side of the board
         if self.fileRank[index][0] == 'a':
             return kingBb & notGH
         elif self.fileRank[index][0] == 'h':
             return kingBb & notAB
         return kingBb
-
-    # generates a bitboard of all possible moves a bishop could make at a given index
+    
+    # generates a bitboard of all possible moves a bishop could make at a given index (stored in self.bishopMoves)
     # ignores blockers
+    # (DEPRECATED) use bishopAttack instead
     def bishopMovesGen(self, index):
         uint64 = 18446744073709551615
         bishopBb = 0b0
@@ -433,7 +463,7 @@ class Board:
         file = index % 8
         # Vertical Rays
         atk_mask = self.fileMasks[file]
-        pieceBb = self.index2Bitboard(index)
+        pieceBb = 0b1 << index
         occupancyBb = self.bitboards['white'] | self.bitboards['black']
         upRay = occupancyBb & atk_mask - pieceBb #need to perform additional subtraction since atk_mask doesn't clear position bit of the piece
         downRay = self.bitSwap(upRay)
@@ -445,7 +475,7 @@ class Board:
         rank = index//8
         # Horizontal Rays (northweast and southeast)
         atk_mask = self.rankMasks[rank]
-        pieceBb = self.index2Bitboard(index)
+        pieceBb = 0b1 << index
         occupancyBb = self.bitboards['white'] | self.bitboards['black']
         rightRay = occupancyBb & atk_mask - pieceBb
         leftRay = self.bitSwap(rightRay)
@@ -468,6 +498,16 @@ class Board:
     # ignores blockers
     def queenMovesGen(self, index):
         return self.rookMovesGen(index) | self.bishopMovesGen(index)
+    
+
+    # given a starting index, ending index and color of piece, this function checks to see if the move is valid
+    # if it is valid, then the move is made by making the appropriate updates to self.board and self.bitboards    
+    # returns True if the move is successfully executed, false otherwise
+    def makeMove(self, start, end, isBlack):
+        color = "white"
+        if isBlack:
+            color = "black"
+        if 0b1 << start & self.bitboards[color] and 0b1 << end & self.validMoves(start, isBlack):
 
     # Generates a bitboard of all possible moves of a queen taking blockers into account
     # includes piece capture moves
@@ -511,6 +551,7 @@ class Board:
         return legalBb
 
     # Returns a bitboard of the pseudovalid moves a piece could make at the given index.
+    # wrapper function for all the move bitboard generators
     def pseudovalidMoves(self, index):
         temp = self.board[index]
         if temp == "p":
@@ -539,12 +580,16 @@ class Board:
             return self.validKingMoves(index, False)
         else:
             return 0
-
+    
+    # TODO: make king unable to move to attacked squares
+    # returns bitboard of all legal squares the king can move to
     def validKingMoves(self, index, isBlack):
         if isBlack:
             return (self.kingMoves[index] & (self.bitboards["whiteatk"] | self.bitboards["black"])) ^ self.kingMoves[index]
         return (self.kingMoves[index] & (self.bitboards["blackatk"] | self.bitboards["white"])) ^ self.kingMoves[index]
 
+    # TODO: does not currently return value if in check
+    # the function returns the status of the game (Checkmate, stalemate, check, or nothing)
     def check(self, index, isBlack):
         moves = self.validKingMoves(index, isBlack)
         if moves == 0:
@@ -558,20 +603,21 @@ class Board:
 
     # returns an integer that has its bit order reversed, endianess is reversed.
     def bitSwap(self, n):
+        #return 18446744073709551615 - n (one's complement)
         result = 0
         for i in range(64):
             result <<= 1
             result |= n & 1
             n >>= 1
         return result
-    # first and knight moves and friendly team pieces to get overlap
-    # then XOR knight moves with overlap to get valid knight moves
 
-    def validKnightMoves(self, index, blackIsEnemey):
-        if blackIsEnemey:
-            friendlyColor = self.bitboards["white"]
-        else:
+    # first AND knight moves and friendly team pieces to get overlap
+    # then XOR knight moves with overlap to get valid knight moves
+    def validKnightMoves(self, index, isBlack):
+        if isBlack:
             friendlyColor = self.bitboards["black"]
+        else:
+            friendlyColor = self.bitboards["white"]
         overlap = self.knightMoves[index] & friendlyColor
         return self.knightMoves[index] ^ overlap
 
@@ -610,11 +656,6 @@ class Board:
             pieceBb = self.toggleBit(pieceBb, index)
             attacked = attacked | self.pseudovalidMoves(index)
         return attacked
-
-    # function that returns the bitboard of the singular piece when given a board index
-    # for instance index2Bitboard(6) returns 64 (0b1000000)
-    def index2Bitboard(self, index):
-        return 0b1 << index
 
     # returns the board index of the smallest set bit given a bitboard
     # for instance index2Bitboard(0b111000000) returns 6
