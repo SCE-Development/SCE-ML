@@ -79,8 +79,6 @@ class Board:
             "black": 0b0,
             "whiteatk": 0b0,
             "blackatk": 0b0,
-            "occupancy": 0b0,
-            ".": 0
         }
 
         self.fileMasks = {
@@ -200,6 +198,8 @@ class Board:
 
     def board2Bitboard(self):
 
+        for key in self.bitboards.keys():
+            self.bitboards[key] = 0b0
         # iterates over board
         for pieceIndex in range(63, -1, -1):
             # iterates of the keys of bitboards dictionary, if the piece == key, then a 1 bit is appended to the piece bitboard
@@ -293,171 +293,209 @@ class Board:
         elif self.fileRank[index][0] == 'h':
             return kingBb & notAB
         return kingBb
-
-    # (DEPRECATED)
-    # used to generate bishop moves bitboards for all squares (stored in self.bishopMoves)
-    # use bishopAttack instead
+    
+    # generates a bitboard of all possible moves a bishop could make at a given index (stored in self.bishopMoves)
+    # ignores blockers
+    # (DEPRECATED) use bishopAttack instead
     def bishopMovesGen(self, index):
         uint64 = 18446744073709551615
         bishopBb = 0b0
-        r = index//8
-        f = index % 8
-        atk_r = r + 1
-        atk_f = f + 1
-        while atk_r < 8 and atk_f < 8:  # Northeast
-            bishopBb = (bishopBb | (0b1 << (atk_r*8 + atk_f))) & uint64
-            atk_r += 1
-            atk_f += 1
-        atk_r = r + 1
-        atk_f = f - 1
-        while atk_r < 8 and atk_f >= 0:  # Northwest
-            bishopBb = (bishopBb | (0b1 << (atk_r*8 + atk_f))) & uint64
-            atk_r += 1
-            atk_f -= 1
-        atk_r = r - 1
-        atk_f = f - 1
-        while atk_r >= 0 and atk_f >= 0:  # Southwest
-            bishopBb = (bishopBb | (0b1 << (atk_r*8 + atk_f))) & uint64
-            atk_r -= 1
-            atk_f -= 1
-        atk_r = r - 1
-        atk_f = f + 1
-        while atk_r >= 0 and atk_f < 8:  # Southeast
-            bishopBb = (bishopBb | (0b1 << (atk_r*8 + atk_f))) & uint64
-            atk_r -= 1
-            atk_f += 1
+        rank= index//8
+        file= index % 8
+        atk_rank= rank+ 1
+        atk_file= file+ 1
+        while atk_rank< 8 and atk_file< 8:  # Northeast
+            bishopBb = (bishopBb | (0b1 << (atk_rank*8 + atk_file))) & uint64
+            atk_rank+= 1
+            atk_file+= 1
+        atk_rank= rank+ 1
+        atk_file= file- 1
+        while atk_rank< 8 and atk_file>= 0:  # Northwest
+            bishopBb = (bishopBb | (0b1 << (atk_rank*8 + atk_file))) & uint64
+            atk_rank+= 1
+            atk_file-= 1
+        atk_rank= rank- 1
+        atk_file= file- 1
+        while atk_rank>= 0 and atk_file>= 0:  # Southwest
+            bishopBb = (bishopBb | (0b1 << (atk_rank*8 + atk_file))) & uint64
+            atk_rank-= 1
+            atk_file-= 1
+        atk_rank= rank- 1
+        atk_file= file+ 1
+        while atk_rank>= 0 and atk_file< 8:  # Southeast
+            bishopBb = (bishopBb | (0b1 << (atk_rank*8 + atk_file))) & uint64
+            atk_rank-= 1
+            atk_file+= 1
         return bishopBb
 
+    # generates a bitboard of the northeast and southwest rays of a bishop
+    # ignores blockers
     def bishopForeslashGen(self, index):
         uint64 = 18446744073709551615
         bishopBb = 0b0
-        r = index//8
-        f = index % 8
-        atk_r = r + 1
-        atk_f = f + 1
-        while atk_r < 8 and atk_f < 8:  # Northeast
-            bishopBb = (bishopBb | (0b1 << (atk_r*8 + atk_f))) & uint64
-            atk_r += 1
-            atk_f += 1
-        atk_r = r - 1
-        atk_f = f - 1
-        while atk_r >= 0 and atk_f >= 0:  # Southwest
-            bishopBb = (bishopBb | (0b1 << (atk_r*8 + atk_f))) & uint64
-            atk_r -= 1
-            atk_f -= 1
+        rank= index//8
+        file = index % 8
+        atk_rank= rank+ 1
+        atk_file = file + 1
+        while atk_rank< 8 and atk_file < 8:  # Northeast
+            bishopBb = (bishopBb | (0b1 << (atk_rank*8 + atk_file))) & uint64
+            atk_rank+= 1
+            atk_file += 1
+        atk_rank= rank- 1
+        atk_file = file - 1
+        while atk_rank>= 0 and atk_file >= 0:  # Southwest
+            bishopBb = (bishopBb | (0b1 << (atk_rank*8 + atk_file))) & uint64
+            atk_rank-= 1
+            atk_file -= 1
         return bishopBb
 
+    # generates a bitboard of the northwest and southeast rays of a bishop
+    # ignores blockers
     def bishopBackslashGen(self, index):
         uint64 = 18446744073709551615
         bishopBb = 0b0
-        r = index//8
-        f = index % 8
-        atk_r = r + 1
-        atk_f = f - 1
-        while atk_r < 8 and atk_f >= 0:  # Northwest
-            bishopBb = (bishopBb | (0b1 << (atk_r*8 + atk_f))) & uint64
-            atk_r += 1
-            atk_f -= 1
-        atk_r = r - 1
-        atk_f = f + 1
-        while atk_r >= 0 and atk_f < 8:  # Southeast
-            bishopBb = (bishopBb | (0b1 << (atk_r*8 + atk_f))) & uint64
-            atk_r -= 1
-            atk_f += 1
+        rank= index//8
+        file = index % 8
+        atk_rank= rank+ 1
+        atk_file = file - 1
+        while atk_rank< 8 and atk_file >= 0:  # Northwest
+            bishopBb = (bishopBb | (0b1 << (atk_rank*8 + atk_file))) & uint64
+            atk_rank+= 1
+            atk_file -= 1
+        atk_rank= rank- 1
+        atk_file = file + 1
+        while atk_rank>= 0 and atk_file < 8:  # Southeast
+            bishopBb = (bishopBb | (0b1 << (atk_rank*8 + atk_file))) & uint64
+            atk_rank-= 1
+            atk_file += 1
         return bishopBb
 
+#Bishop and Rook attacks are calculated by using the propagation of carry bits in bitwise subtraction to find a blocker. 
+#(in little endian convention)  
+#   01000011 occupied pieces
+# - 01000000 sliding piece
+#   00000011 blocker pieces   
+#The sliding piece is cleard from the occupancy board to set up for carry bit propagation. 
+#
+#   00000011 blocker pieces
+# - 01000000 sliding piece
+#   01111101 the carry bit is propagated until the bit before the blocker
+#  
+#     01000011 occupied pieces
+# xor 01111101 (blocker - sliding) piece
+#     00111110 gets the possible moves of the slider in the positive horizontal direction (including capture)
+#
+# This method only works in the positive direction and can only detect the first blocker in its propagation.
+# To get the positive direction moves, the bitboards involved have their endianess reversed with bitSwap() and the same calculations are made
+# To get multiple blockers in each propagation, the method is ran multiple times with different piece masks            
+#   https://www.chessprogramming.org/Efficient_Generation_of_Sliding_Piece_Attacks#Sliding_Attacks_by_Calculation
+#   https://www.chessprogramming.org/Subtracting_a_Rook_from_a_Blocking_Piece
+
+
+    # Generates a bitboard of all possible moves of a bishop taking blockers into account
+    # includes piece capture moves
+    # does not check if the move leaves the king in check, making these pseudovalid moves.
     def bishopAttack(self, index, isBlack: bool):
-        uint64 = 18446744073709551615
 
         # foreslash (northeast and southwest)
-        atk_mask = self.bishopForeslash[index]
-        pieceBb = 0b1 << index
-        occBb = self.bitboards['occupancy']
-        forwardRays = occBb & atk_mask
-        backRays = self.bitSwap(forwardRays)
-        forwardRays = (forwardRays - pieceBb)
-        backRays = backRays - self.bitSwap(pieceBb)
-        forwardRays = forwardRays ^ self.bitSwap(backRays)
-        foreRays = forwardRays & atk_mask
+        atk_mask = self.bishopForeslash[index]      # bitboard of northeast and southwest rays
+        pieceBb = self.index2Bitboard(index)        # position bitboard of current piece
+        occupancyBb = self.bitboards['white'] | self.bitboards['black']   # bitboard of all the pieces on the board, (including the current one)
+        positiveRayBb = occupancyBb & atk_mask      # bitboard to calculate northeast moves
+                                                    # Anding with the attack mask implicitly does the first subraction to clear the piece from the occupancy
+        negativeRayBb = self.bitSwap(positiveRayBb)        # Reversed bitboard to calculate southwest moves
+        positiveRayBb = (positiveRayBb - pieceBb)          # Subtraction to propagate carry bit
+        negativeRayBb = negativeRayBb - self.bitSwap(pieceBb)        
+        foreslashRays = positiveRayBb ^ self.bitSwap(negativeRayBb) #No need to xor with occupancy bitboard since the parts of each RayBb that were not affected by propagation are the same as occupancy.
+        foreslashRays = foreslashRays & atk_mask
 
-        # backslash (northweast and southeast)
+        # backslash (northwest and southeast)
         atk_mask = self.bishopBackslash[index]
-        pieceBb = 0b1 << index
-        occBb = self.bitboards['occupancy']
-        forwardRays = occBb & atk_mask
-        backRays = self.bitSwap(forwardRays)
-        forwardRays = (forwardRays - pieceBb)
-        backRays = backRays - self.bitSwap(pieceBb)
-        forwardRays = forwardRays ^ self.bitSwap(backRays)
-        nonForeRays = forwardRays & atk_mask
+        pieceBb = self.index2Bitboard(index)        
+        occupancyBb = self.bitboards['white'] | self.bitboards['black']  
+        positiveRayBb = occupancyBb & atk_mask                        
+        negativeRayBb = self.bitSwap(positiveRayBb)       
+        positiveRayBb = (positiveRayBb - pieceBb)         
+        negativeRayBb = negativeRayBb - self.bitSwap(pieceBb)        
+        backslashRays = positiveRayBb ^ self.bitSwap(negativeRayBb)
+        backslashRays = backslashRays & atk_mask
 
         color = 'white'
         if isBlack:
             color = 'black'
 
-        rays = foreRays | nonForeRays
+        rays = foreslashRays | backslashRays
 
-        atkBb = (rays ^ self.bitboards[color]) & rays
+        atkBb = (rays ^ self.bitboards[color]) & rays          #to remove moves that capture ally blockers
         return atkBb
 
+ 
+    # generates a bitboard of all possible moves a rook could make at a given index
+    # ignores blockers
     def rookMovesGen(self, index):
         uint64 = 18446744073709551615
         rookBb = 0b0
-        r = index//8
-        f = index % 8
-        atk_r = r + 1
-        while atk_r < 8:  # North
-            rookBb = (rookBb | (0b1 << (atk_r*8 + f))) & uint64
-            atk_r += 1
-        atk_r = r - 1
-        while atk_r >= 0:  # South
-            rookBb = (rookBb | (0b1 << (atk_r*8 + f))) & uint64
-            atk_r -= 1
-        atk_f = f + 1
-        while atk_f < 8:  # East
-            rookBb = (rookBb | (0b1 << (r*8 + atk_f))) & uint64
-            atk_f += 1
-        atk_f = f - 1
-        while atk_f >= 0:  # West
-            rookBb = (rookBb | (0b1 << (r*8 + atk_f))) & uint64
-            atk_f -= 1
+        rank= index//8
+        file = index % 8
+        atk_rank= rank+ 1
+        while atk_rank< 8:  # North
+            rookBb = (rookBb | (0b1 << (atk_rank*8 + file))) & uint64
+            atk_rank+= 1
+        atk_rank= rank- 1
+        while atk_rank>= 0:  # South
+            rookBb = (rookBb | (0b1 << (atk_rank*8 + file))) & uint64
+            atk_rank-= 1
+        atk_file = file + 1
+        while atk_file < 8:  # East
+            rookBb = (rookBb | (0b1 << (atk_rank*8 + atk_file))) & uint64
+            atk_file += 1
+        atk_file = file - 1
+        while atk_file >= 0:  # West
+            rookBb = (rookBb | (0b1 << (atk_rank*8 + atk_file))) & uint64
+            atk_file -= 1
         return rookBb
 
+    # Generates a bitboard of all possible moves of a rook taking blockers into account
+    # includes piece capture moves
+    # does not check if the move leaves the king in check, making these pseudovalid moves.
     def rookAttack(self, index, isBlack: bool):
-        uint64 = 18446744073709551615
+
         file = index % 8
         # Vertical Rays
         atk_mask = self.fileMasks[file]
         pieceBb = 0b1 << index
-        occBb = self.bitboards['occupancy']
-        upRay = occBb & atk_mask
+        occupancyBb = self.bitboards['white'] | self.bitboards['black']
+        upRay = occupancyBb & atk_mask - pieceBb #need to perform additional subtraction since atk_mask doesn't clear position bit of the piece
         downRay = self.bitSwap(upRay)
         upRay = (upRay - pieceBb)
         downRay = downRay - self.bitSwap(pieceBb)
-        upRay = upRay ^ self.bitSwap(downRay)
-        Vertical = upRay & atk_mask
+        verticalRays = upRay ^ self.bitSwap(downRay)
+        verticalRays = verticalRays & atk_mask
 
         rank = index//8
         # Horizontal Rays (northweast and southeast)
         atk_mask = self.rankMasks[rank]
         pieceBb = 0b1 << index
-        occBb = self.bitboards['occupancy']
-        rightRay = occBb & atk_mask
+        occupancyBb = self.bitboards['white'] | self.bitboards['black']
+        rightRay = occupancyBb & atk_mask - pieceBb
         leftRay = self.bitSwap(rightRay)
         rightRay = (rightRay - pieceBb)
         leftRay = leftRay - self.bitSwap(pieceBb)
-        rightRay = rightRay ^ self.bitSwap(leftRay)
-        Horizontal = rightRay & atk_mask
+        horizontalRays = rightRay ^ self.bitSwap(leftRay)
+        horizontalRays = horizontalRays & atk_mask
 
         color = 'white'
         if isBlack:
             color = 'black'
 
-        rays = Vertical | Horizontal
+        rays = verticalRays | horizontalRays
 
         atkBb = (rays ^ self.bitboards[color]) & rays
         return atkBb
 
+    # generates a bitboard of all possible moves a queen could make at a given index
+    # bitwise or of rook and bishop moves
+    # ignores blockers
     def queenMovesGen(self, index):
         return self.rookMovesGen(index) | self.bishopMovesGen(index)
     
@@ -489,21 +527,75 @@ class Board:
             print("Not a valid move")
             return False
 
+    # Generates a bitboard of all possible moves of a queen taking blockers into account
+    # includes piece capture moves
+    # bitwise or of the rookAttack and bishopAttack
+    # does not check if the move leaves the king in check, making these pseudovalid moves.
+    def queenAttack(self, index, isBlack: bool):
+        return self.rookAttack(index, isBlack) | self.bishopAttack(index, isBlack)
+
+    # Changes the element of the board at index end to the element at start
+    # The possible moves are based on pseudovalidMoves
+    # does not update the bitboards.
+    def makeMove(self, start, end):
+        if (0b1 << end & self.pseudovalidMoves(start)):
+            self.board[end] = self.board[start]
+            self.board[start] = "."
+        else:
+            print("Not a pseudovalid move")
+
+    # Calls makeMove on every possible pseudovalid moves of the piece at the given index.
+    # If the king is in check after the pseudovalid move, that move bit is toggled off
+    # returns a bitboard of all the legal moves
+    def legalMoves(self, index):
+        legalBb = self.pseudovalidMoves(index)
+        tempBb = self.pseudovalidMoves(index) #temporary bitboard used to iterate all the bits on a bitboard.
+        enemyatk = 'whiteatk'
+        king = 'k'
+        if (self.board[index].isupper()):
+            enemyatk = 'blackatk'
+            king = 'K'
+
+        while tempBb > 0: 
+            end = self.bitboard2Index(tempBb)
+            prevEnd, prevStart = self.board[end], self.board[index]
+            self.makeMove(index, end)
+            self.board2Bitboard()
+            if(self.bitboards[king] & self.bitboards[enemyatk]):        #Checks if king is in check
+                legalBb = self.toggleBit(legalBb, end)
+            self.board[end], self.board[index] = prevEnd, prevStart
+            self.board2Bitboard()
+            tempBb = self.toggleBit(tempBb, end)
+        return legalBb
+
+    # Returns a bitboard of the pseudovalid moves a piece could make at the given index.
     # wrapper function for all the move bitboard generators
-    def validMoves(self, index, isBlack):
-        temp = self.board[index].lower()
+    def pseudovalidMoves(self, index):
+        temp = self.board[index]
         if temp == "p":
             return self.pawnMoves(index)
         elif temp == "n":
-            return self.validKnightMoves(index, isBlack)
+            return self.validKnightMoves(index, True)
         elif temp == "q":
-            return self.queenMoves[index]
+            return self.queenAttack(index, True)
         elif temp == "b":
-            return self.bishopAttack(index, isBlack)
+            return self.bishopAttack(index, True)
         elif temp == "r":
-            return self.rookAttack(index, isBlack)
+            return self.rookAttack(index, True)
         elif temp == "k":
-            return self.validKingMoves(index, isBlack)
+            return self.validKingMoves(index, True)
+        elif temp == "P":
+            return self.pawnMoves(index)
+        elif temp == "N":
+            return self.validKnightMoves(index, False)
+        elif temp == "Q":
+            return self.queenAttack(index, False)
+        elif temp == "B":
+            return self.bishopAttack(index, False)
+        elif temp == "R":
+            return self.rookAttack(index, False)
+        elif temp == "K":
+            return self.validKingMoves(index, False)
         else:
             return 0
     
@@ -517,7 +609,7 @@ class Board:
     # TODO: does not currently return value if in check
     # the function returns the status of the game (Checkmate, stalemate, check, or nothing)
     def check(self, index, isBlack):
-        moves = self.validKingMoves(index, isBlack) | 0b1 << index
+        moves = self.validKingMoves(index, isBlack)
         if moves == 0:
             print("Checkmate")
             return -1
@@ -527,7 +619,7 @@ class Board:
         print("Not in Check")
         return 1
 
-    # returns an integer that has its bits reversed
+    # returns an integer that has its bit order reversed, endianess is reversed.
     def bitSwap(self, n):
         #return 18446744073709551615 - n (one's complement)
         result = 0
@@ -537,7 +629,7 @@ class Board:
             n >>= 1
         return result
 
-    # first and knight moves and friendly team pieces to get overlap
+    # first AND knight moves and friendly team pieces to get overlap
     # then XOR knight moves with overlap to get valid knight moves
     def validKnightMoves(self, index, isBlack):
         if isBlack:
@@ -546,22 +638,41 @@ class Board:
             friendlyColor = self.bitboards["white"]
         overlap = self.knightMoves[index] & friendlyColor
         return self.knightMoves[index] ^ overlap
-        
+
     # toggles a bit
     def toggleBit(self, bitboard, index):
         return bitboard ^ 0b1 << index
 
-    # returns bitboard of all squares attacked by the given color
-    def attackedSquares(self, isBlack):
-        color = "white"
+    # returns bitboard that has a 1 on each square that has a piece on it
+    # deprecated (use self.bitboards["(white/black)"]) instead
+    def pieceMask(self):
+        pieceMask = 0b0
+        for key in self.bitboards.keys():
+            if key in ("R", "N", "B", "Q", "K", "P", "r", "n", "b", "q", "k", "p"):
+                pieceMask |= self.bitboards[key]
+        return pieceMask
+
+    # given a boolean isBlack, if true, then generates bitboard mask of all white pieces
+    # otherwise generates bitboard mask for black pieces
+    def enemyMask(self, isBlack):
+        enemyMask = 0b0
         if isBlack:
-            color = 'black'
+            for key in self.bitboards.keys():
+                if key.isupper():
+                    enemyMask |= self.bitboards[key]
+        else:
+            for key in self.bitboards.keys():
+                if key.islower():
+                    enemyMask |= self.bitboards[key]
+        return enemyMask
+
+    def attackedSquares(self, color):
         pieceBb = self.bitboards[color]
         attacked = 0b0
         while pieceBb > 0:
             index = self.bitboard2Index(pieceBb)
             pieceBb = self.toggleBit(pieceBb, index)
-            attacked |= self.validMoves(index, isBlack)
+            attacked = attacked | self.pseudovalidMoves(index)
         return attacked
 
     # returns the board index of the smallest set bit given a bitboard
@@ -623,6 +734,28 @@ class Board:
 
 ########################################
 brd = Board()
-brd.board2Bitboard()
 
-#brd.printBitboard(brd.validKingMoves(4, False))
+brd.board = [
+    ".", ".", ".", ".", ".", ".", ".", ".",
+    ".", ".", ".", ".", "p", ".", ".", ".",
+    ".", ".", ".", ".", ".", ".", ".", ".",
+    ".", "K", ".", ".", "R", ".", "r", ".",
+    ".", ".", ".", ".", ".", ".", ".", ".",
+    ".", ".", ".", ".", "p", ".", "b", ".",
+    ".", ".", ".", ".", ".", ".", ".", ".",
+    ".", ".", ".", ".", ".", ".", ".", "."
+
+
+]
+
+
+brd.board2Bitboard()
+brd.printBoard()
+print("\n")
+brd.printBitboard(brd.bitboards['black'])
+print("\nBlack Attack")
+brd.printBitboard(brd.bitboards['blackatk'])
+print("\nWhite Attack")
+brd.printBitboard(brd.bitboards['whiteatk'])
+print("\nLegal Moves of piece at e4")
+brd.printBitboard(brd.legalMoves(28))
