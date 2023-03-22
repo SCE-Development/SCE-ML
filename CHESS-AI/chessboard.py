@@ -509,6 +509,24 @@ class Board:
             color = "black"
         if 0b1 << start & self.bitboards[color] and 0b1 << end & self.validMoves(start, isBlack):
 
+            # if a piece is taken, then the bit corresponding to that index in the taken piece's bitboard is cleared
+            if self.board[end] != ".":
+                self.bitboards[self.board[end]] = self.toggleBit(self.bitboards[self.board[end]], end)
+            
+            # update the bitboard of the moved piece
+            self.bitboards[self.board[start]] = self.toggleBit(self.toggleBit(self.bitboards[self.board[start]], start), end)
+
+            # update the board to represent to move
+            self.board[end], self.board[start] = self.board[start], "."
+
+            # update the bitboards of white and black pieces
+            self.bitboards["white"] = self.bitboards['B'] | self.bitboards['N'] | self.bitboards['R'] | self.bitboards['Q'] | self.bitboards['P'] | self.bitboards["K"]
+            self.bitboards["black"] = self.bitboards['b'] | self.bitboards['n'] | self.bitboards['r'] | self.bitboards['q'] | self.bitboards['p'] | self.bitboards['k']
+            return True
+        else:
+            print("Not a valid move")
+            return False
+
     # Generates a bitboard of all possible moves of a queen taking blockers into account
     # includes piece capture moves
     # bitwise or of the rookAttack and bishopAttack
