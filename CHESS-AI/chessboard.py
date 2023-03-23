@@ -54,8 +54,8 @@ class Board:
         self.board = [
             "R", "N", "B", "Q", "K", "B", "N", "R",
             "P", "P", "P", "P", "P", "P", "P", "P",
-            ".", "p", ".", ".", ".", ".", ".", ".",
-            "p", ".", ".", ".", ".", ".", ".", ".",
+            ".", ".", ".", ".", ".", ".", ".", ".",
+            ".", ".", ".", ".", ".", ".", ".", ".",
             ".", ".", ".", ".", ".", ".", ".", ".",
             ".", ".", ".", ".", ".", ".", ".", ".",
             "p", "p", "p", "p", "p", "p", "p", "p",
@@ -737,12 +737,3 @@ brd.board = [
 
 
 brd.board2Bitboard()
-brd.printBoard()
-print("\n")
-brd.printBitboard(brd.bitboards['black'])
-print("\nBlack Attack")
-brd.printBitboard(brd.bitboards['blackatk'])
-print("\nWhite Attack")
-brd.printBitboard(brd.bitboards['whiteatk'])
-print("\nLegal Moves of piece at e4")
-brd.printBitboard(brd.legalMoves(28))
