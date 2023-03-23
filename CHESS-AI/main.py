@@ -22,7 +22,7 @@ while play:
                 print("PLEASE ENTER A VALID MOVE")
             else:
                 start, end = brd.fileRank2index[move[0:2]], brd.fileRank2index[move[2:4]]
-                if brd.makeMove(start, end):
+                if brd.makeMove(start, end, False):
                     validMove = True
         brd.printBoard()
         color = False
@@ -38,7 +38,7 @@ while play:
                 print("PLEASE ENTER A VALID MOVE")
             else:
                 start, end = brd.fileRank2index[move[0:2]], brd.fileRank2index[move[2:4]]
-                validMove = brd.makeMove(start, end)
+                validMove = brd.makeMove(start, end, False)
         brd.printBoard()
         color = True
         validMove = False
