@@ -503,8 +503,8 @@ class Board:
     # given a starting index, ending index and color of piece, this function checks to see if the move is valid
     # if it is valid, then the move is made by making the appropriate updates to self.board and self.bitboards    
     # returns True if the move is successfully executed, false otherwise
-    def makeMove(self, start, end):
-        if 0b1 << end & self.pseudovalidMoves(start):
+    def makeMove(self, start, end, lookingForward):
+        if lookingForward or 0b1 << end & self.legalMoves(start):
 
             # if a piece is taken, then the bit corresponding to that index in the taken piece's bitboard is cleared
             if self.board[end] != ".":
@@ -546,7 +546,7 @@ class Board:
         while tempBb > 0: 
             end = self.bitboard2Index(tempBb)
             prevEnd, prevStart = self.board[end], self.board[index]
-            self.makeMove(index, end)
+            self.makeMove(index, end, True)
             self.board2Bitboard()
             if(self.bitboards[king] & self.bitboards[enemyatk]):        #Checks if king is in check
                 legalBb = self.toggleBit(legalBb, end)
