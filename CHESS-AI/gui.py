@@ -7,18 +7,18 @@ pygame.init()
 
 WIDTH, HEIGHT = 1024, 1024
 FPS = 60
-BK_IMAGE = pygame.image.load(os.path.join('CHESS-AI\Assets', 'bK.png'))
-BQ_IMAGE = pygame.image.load(os.path.join('CHESS-AI\Assets', 'bQ.png'))
-BB_IMAGE = pygame.image.load(os.path.join('CHESS-AI\Assets', 'bB.png'))
-BN_IMAGE = pygame.image.load(os.path.join('CHESS-AI\Assets', 'bN.png'))
-BR_IMAGE = pygame.image.load(os.path.join('CHESS-AI\Assets', 'bR.png'))
-BP_IMAGE = pygame.image.load(os.path.join('CHESS-AI\Assets', 'bP.png'))
-WK_IMAGE = pygame.image.load(os.path.join('CHESS-AI\Assets', 'wK.png'))
-WQ_IMAGE = pygame.image.load(os.path.join('CHESS-AI\Assets', 'wQ.png'))
-WB_IMAGE = pygame.image.load(os.path.join('CHESS-AI\Assets', 'wB.png'))
-WN_IMAGE = pygame.image.load(os.path.join('CHESS-AI\Assets', 'wN.png'))
-WR_IMAGE = pygame.image.load(os.path.join('CHESS-AI\Assets', 'wR.png'))
-WP_IMAGE = pygame.image.load(os.path.join('CHESS-AI\Assets', 'wP.png'))
+BK_IMAGE = pygame.image.load(os.path.join('Assets', 'bK.png'))
+BQ_IMAGE = pygame.image.load(os.path.join('Assets', 'bQ.png'))
+BB_IMAGE = pygame.image.load(os.path.join('Assets', 'bB.png'))
+BN_IMAGE = pygame.image.load(os.path.join('Assets', 'bN.png'))
+BR_IMAGE = pygame.image.load(os.path.join('Assets', 'bR.png'))
+BP_IMAGE = pygame.image.load(os.path.join('Assets', 'bP.png'))
+WK_IMAGE = pygame.image.load(os.path.join('Assets', 'wK.png'))
+WQ_IMAGE = pygame.image.load(os.path.join('Assets', 'wQ.png'))
+WB_IMAGE = pygame.image.load(os.path.join('Assets', 'wB.png'))
+WN_IMAGE = pygame.image.load(os.path.join('Assets', 'wN.png'))
+WR_IMAGE = pygame.image.load(os.path.join('Assets', 'wR.png'))
+WP_IMAGE = pygame.image.load(os.path.join('Assets', 'wP.png'))
 
 bitkey_image = {
     'k': BK_IMAGE,
