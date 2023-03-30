@@ -238,18 +238,18 @@ class Board:
             # general formula for generating pawn move and attack bitboard is as follows:
             # (mask contain any enemy pieces blocking pawn) XOR (mask of square in front of pawn and any enemies that can be attacked by pawn)
             if self.fileRank[index][0] == "a":
-                return ((pawnForwardMask & pieceMask) | ((pawnBb << 8 & pieceMask) << 8)) ^ pawnForwardMask | pawnBb << 9 & enemyMask & uint64
+                return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | pawnBb << 9 & enemyMask)) & uint64
             elif self.fileRank[index][0] == "h":
-                return ((pawnForwardMask & pieceMask) | ((pawnBb << 8 & pieceMask) << 8)) ^ pawnForwardMask | pawnBb << 7 & enemyMask & uint64
-            return ((pawnForwardMask & pieceMask) | ((pawnBb << 8 & pieceMask) << 8)) ^ pawnForwardMask | pawnBb << 7 & enemyMask | pawnBb << 9 & enemyMask & uint64
+                return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | pawnBb << 7 & enemyMask)) & uint64
+            return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | pawnBb << 7 & enemyMask | pawnBb << 9 & enemyMask)) & uint64
         elif self.board[index] == 'p':
             pawnForwardMask = pawnBb >> 8 if self.fileRank[index][1] != 7 else pawnBb >> 8 | pawnBb >> 16
             enemyMask = self.bitboards["white"]
             if self.fileRank[index][0] == "a":
-                return ((pawnForwardMask & pieceMask) | ((pawnBb >> 8 & pieceMask) >> 8)) ^ pawnForwardMask | pawnBb >> 7 & enemyMask & uint64
+                return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | pawnBb >> 7 & enemyMask)) & uint64
             elif self.fileRank[index][0] == "h":
-                return ((pawnForwardMask & pieceMask) | ((pawnBb >> 8 & pieceMask) >> 8)) ^ pawnForwardMask | pawnBb >> 9 & enemyMask & uint64
-            return ((pawnForwardMask & pieceMask) | ((pawnBb >> 8 & pieceMask) >> 8)) ^ pawnForwardMask | pawnBb >> 7 & enemyMask | pawnBb >> 9 & enemyMask & uint64
+                return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | pawnBb >> 9 & enemyMask)) & uint64
+            return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | pawnBb >> 7 & enemyMask | pawnBb >> 9 & enemyMask)) & uint64
         # returns 0 if the index does not refer to a pawn
         print("Not a Pawn")
         return 0
@@ -721,19 +721,6 @@ class Board:
 
 ########################################
 brd = Board()
-
-brd.board = [
-    ".", ".", ".", ".", ".", ".", ".", ".",
-    ".", ".", ".", ".", "p", ".", ".", ".",
-    ".", ".", ".", ".", ".", ".", ".", ".",
-    ".", "K", ".", ".", "R", ".", "r", ".",
-    ".", ".", ".", ".", ".", ".", ".", ".",
-    ".", ".", ".", ".", "p", ".", "b", ".",
-    ".", ".", ".", ".", ".", ".", ".", ".",
-    ".", ".", ".", ".", ".", ".", ".", "."
-
-
-]
-
-
 brd.board2Bitboard()
+
+brd.printBitboard(brd.pawnMoves(11))
