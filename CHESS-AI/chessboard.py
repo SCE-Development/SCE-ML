@@ -601,14 +601,24 @@ class Board:
     # the function returns the status of the game (Checkmate, stalemate, check, or nothing)
     def check(self, index, isBlack):
         moves = self.validKingMoves(index, isBlack)
+        if isBlack:
+            king = self.bitboards["k"]
+            oppAtk = self.bitboards["whiteAtk"]
+        else:
+           king = self.bitboards["K"]
+           oppAtk = self.bitboards["blackAtk"]
+
         if moves == 0:
             print("Checkmate")
             return -1
+        elif king & oppAtk > 0:
+            return -2
         elif moves == 0b1 << index:
             print("Stalemate")
             return 0
         print("Not in Check")
         return 1
+    
 
     # returns an integer that has its bit order reversed, endianess is reversed.
     def bitSwap(self, n):

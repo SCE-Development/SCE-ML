@@ -2,13 +2,15 @@ import pygame
 import chessboard as cb
 
 
+
 class GUI:
     def __init__(self, whitePOV):
         self.BOARDSIZE = 800
         self.SCREENWIDTH, self.SCREENHEIGHT = self.BOARDSIZE, int(self.BOARDSIZE * 1.125)
         self.TILESIZE = self.SCREENWIDTH >> 3
         pygame.init()
-        self.WIN = pygame.display.set_mode((self.SCREENWIDTH, self.SCREENHEIGHT))
+        self.WIN = pygame.display.set_mode(
+            (self.SCREENWIDTH, self.SCREENHEIGHT))
         pygame.display.set_caption("SCE Chess Bot")
         self.pieceImages = {
             "R": self.pieceToImg("wR"),
@@ -198,4 +200,3 @@ if __name__ == "__main__":
 
     gui = GUI(whitePOV)
     gui.main()
-
