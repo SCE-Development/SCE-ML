@@ -673,7 +673,22 @@ class Board:
         while pieceBb > 0:
             index = self.bitboard2Index(pieceBb)
             pieceBb = self.toggleBit(pieceBb, index)
-            attacked = attacked | self.pseudovalidMoves(index)
+            if 0b1 << index & self.bitboards['P']:
+                if index % 8 == 0:  
+                    attacked |= 0b1 << (index + 9)
+                elif index % 8 == 7:
+                    attacked |= 0b1 << (index + 7) 
+                else:
+                    attacked |= 0b1 << (index + 7) | 0b1 << (index + 9)
+            elif 0b1 << index & self.bitboards['p']:
+                if index % 8 == 0:  
+                    attacked |= 0b1 << (index - 7)
+                elif index % 8 == 7:
+                    attacked |= 0b1 << (index - 9) 
+                else:
+                    attacked |= 0b1 << (index - 7) | 0b1 << (index - 9)
+            else:
+                attacked |= self.pseudovalidMoves(index)
         return attacked
 
     # returns the board index of the smallest set bit given a bitboard
@@ -736,5 +751,6 @@ class Board:
 ########################################
 brd = Board()
 brd.board2Bitboard()
-
-brd.printBitboard(brd.pawnMoves(11))
+brd.printBoard()
+print()
+brd.printBitboard(brd.bitboards["blackatk"])
