@@ -54,8 +54,8 @@ class Board:
         self.board = [
             "R", "N", "B", "Q", "K", "B", "N", "R",
             "P", "P", "P", "P", "P", "P", "P", "P",
-            ".", "p", ".", ".", ".", ".", ".", ".",
-            "p", ".", ".", ".", ".", ".", ".", ".",
+            ".", ".", ".", ".", ".", ".", ".", ".",
+            ".", ".", ".", ".", ".", ".", ".", ".",
             ".", ".", ".", ".", ".", ".", ".", ".",
             ".", ".", ".", ".", ".", ".", ".", ".",
             "p", "p", "p", "p", "p", "p", "p", "p",
@@ -229,7 +229,7 @@ class Board:
         if self.board[index] == "P":
             # pawnForwardMask is mask of piece in front of a pawn. If the pawn is in the starting rank,
             # then it also contains another set bit two spaces in front of the pawn
-            pawnForwardMask = pawnBb << 8 if self.fileRank[index][1] != 2 else pawnBb << 8 | pawnBb << 16
+            pawnForwardMask = pawnBb << 8
             enemyMask = self.bitboards["black"]
             # there are three cases for pawn attacks. If it is in the a file, then we will not check the square to front left for enemy
             # if in the h file, then we will not check the square to the front right
@@ -237,19 +237,23 @@ class Board:
 
             # general formula for generating pawn move and attack bitboard is as follows:
             # (mask contain any enemy pieces blocking pawn) XOR (mask of square in front of pawn and any enemies that can be attacked by pawn)
+            if self.fileRank[index][1] == 2 and 0b1 << (index + 8) & pieceMask == 0:
+                pawnForwardMask |= pawnBb << 16
             if self.fileRank[index][0] == "a":
-                return ((pawnForwardMask & pieceMask) | ((pawnBb << 8 & pieceMask) << 8)) ^ pawnForwardMask | pawnBb << 9 & enemyMask & uint64
+                return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb << 9 & enemyMask))) & uint64
             elif self.fileRank[index][0] == "h":
-                return ((pawnForwardMask & pieceMask) | ((pawnBb << 8 & pieceMask) << 8)) ^ pawnForwardMask | pawnBb << 7 & enemyMask & uint64
-            return ((pawnForwardMask & pieceMask) | ((pawnBb << 8 & pieceMask) << 8)) ^ pawnForwardMask | pawnBb << 7 & enemyMask | pawnBb << 9 & enemyMask & uint64
+                return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb << 7 & enemyMask))) & uint64
+            return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb << 7 & enemyMask | pawnBb << 9 & enemyMask))) & uint64
         elif self.board[index] == 'p':
-            pawnForwardMask = pawnBb >> 8 if self.fileRank[index][1] != 7 else pawnBb >> 8 | pawnBb >> 16
+            pawnForwardMask = pawnBb >> 8
             enemyMask = self.bitboards["white"]
+            if self.fileRank[index][1] == 7 and 0b1 << (index - 8) & pieceMask == 0:
+                pawnForwardMask |= pawnBb >> 16
             if self.fileRank[index][0] == "a":
-                return ((pawnForwardMask & pieceMask) | ((pawnBb >> 8 & pieceMask) >> 8)) ^ pawnForwardMask | pawnBb >> 7 & enemyMask & uint64
+                return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb >> 7 & enemyMask))) & uint64
             elif self.fileRank[index][0] == "h":
-                return ((pawnForwardMask & pieceMask) | ((pawnBb >> 8 & pieceMask) >> 8)) ^ pawnForwardMask | pawnBb >> 9 & enemyMask & uint64
-            return ((pawnForwardMask & pieceMask) | ((pawnBb >> 8 & pieceMask) >> 8)) ^ pawnForwardMask | pawnBb >> 7 & enemyMask | pawnBb >> 9 & enemyMask & uint64
+                return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb >> 9 & enemyMask))) & uint64
+            return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb >> 7 & enemyMask | pawnBb >> 9 & enemyMask))) & uint64
         # returns 0 if the index does not refer to a pawn
         print("Not a Pawn")
         return 0
@@ -399,7 +403,7 @@ class Board:
 
         # foreslash (northeast and southwest)
         atk_mask = self.bishopForeslash[index]      # bitboard of northeast and southwest rays
-        pieceBb = self.index2Bitboard(index)        # position bitboard of current piece
+        pieceBb = 0b1 << index                      # position bitboard of current piece
         occupancyBb = self.bitboards['white'] | self.bitboards['black']   # bitboard of all the pieces on the board, (including the current one)
         positiveRayBb = occupancyBb & atk_mask      # bitboard to calculate northeast moves
                                                     # Anding with the attack mask implicitly does the first subraction to clear the piece from the occupancy
@@ -411,7 +415,7 @@ class Board:
 
         # backslash (northwest and southeast)
         atk_mask = self.bishopBackslash[index]
-        pieceBb = self.index2Bitboard(index)        
+        pieceBb = 0b1 << index       
         occupancyBb = self.bitboards['white'] | self.bitboards['black']  
         positiveRayBb = occupancyBb & atk_mask                        
         negativeRayBb = self.bitSwap(positiveRayBb)       
@@ -503,11 +507,8 @@ class Board:
     # given a starting index, ending index and color of piece, this function checks to see if the move is valid
     # if it is valid, then the move is made by making the appropriate updates to self.board and self.bitboards    
     # returns True if the move is successfully executed, false otherwise
-    def makeMove(self, start, end, isBlack):
-        color = "white"
-        if isBlack:
-            color = "black"
-        if 0b1 << start & self.bitboards[color] and 0b1 << end & self.validMoves(start, isBlack):
+    def makeMove(self, start, end, lookingForward=False):
+        if lookingForward or 0b1 << end & self.legalMoves(start):
 
             # if a piece is taken, then the bit corresponding to that index in the taken piece's bitboard is cleared
             if self.board[end] != ".":
@@ -534,16 +535,6 @@ class Board:
     def queenAttack(self, index, isBlack: bool):
         return self.rookAttack(index, isBlack) | self.bishopAttack(index, isBlack)
 
-    # Changes the element of the board at index end to the element at start
-    # The possible moves are based on pseudovalidMoves
-    # does not update the bitboards.
-    def makeMove(self, start, end):
-        if (0b1 << end & self.pseudovalidMoves(start)):
-            self.board[end] = self.board[start]
-            self.board[start] = "."
-        else:
-            print("Not a pseudovalid move")
-
     # Calls makeMove on every possible pseudovalid moves of the piece at the given index.
     # If the king is in check after the pseudovalid move, that move bit is toggled off
     # returns a bitboard of all the legal moves
@@ -559,7 +550,7 @@ class Board:
         while tempBb > 0: 
             end = self.bitboard2Index(tempBb)
             prevEnd, prevStart = self.board[end], self.board[index]
-            self.makeMove(index, end)
+            self.makeMove(index, end, True)
             self.board2Bitboard()
             if(self.bitboards[king] & self.bitboards[enemyatk]):        #Checks if king is in check
                 legalBb = self.toggleBit(legalBb, end)
@@ -744,28 +735,6 @@ class Board:
 
 ########################################
 brd = Board()
-
-brd.board = [
-    ".", ".", ".", ".", ".", ".", ".", ".",
-    ".", ".", ".", ".", "p", ".", ".", ".",
-    ".", ".", ".", ".", ".", ".", ".", ".",
-    ".", "K", ".", ".", "R", ".", "r", ".",
-    ".", ".", ".", ".", ".", ".", ".", ".",
-    ".", ".", ".", ".", "p", ".", "b", ".",
-    ".", ".", ".", ".", ".", ".", ".", ".",
-    ".", ".", ".", ".", ".", ".", ".", "."
-
-
-]
-
-
 brd.board2Bitboard()
-brd.printBoard()
-print("\n")
-brd.printBitboard(brd.bitboards['black'])
-print("\nBlack Attack")
-brd.printBitboard(brd.bitboards['blackatk'])
-print("\nWhite Attack")
-brd.printBitboard(brd.bitboards['whiteatk'])
-print("\nLegal Moves of piece at e4")
-brd.printBitboard(brd.legalMoves(28))
+
+brd.printBitboard(brd.pawnMoves(11))
