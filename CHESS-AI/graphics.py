@@ -125,6 +125,7 @@ class GUI:
         font = pygame.font.Font(pygame.font.get_default_font(), 25)
         if checkmate == -1:
             text = font.render("Checkmate", True, (0, 0, 0))
+            return False
         else:
             turn = "White" if self.whitesTurn else "Black"
             text = font.render(f"{turn}'s turn", True, (0, 0, 0))
@@ -132,6 +133,7 @@ class GUI:
             center=(self.SCREENWIDTH / 2, (self.TILESIZE / 2) + self.BOARDSIZE))
         self.WIN.blit(text, text_rect)
         pygame.display.update()
+        return True
 
     def updateScreen(self):
         self.checkerPattern()

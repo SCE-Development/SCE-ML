@@ -616,19 +616,20 @@ class Board:
     # TODO: does not currently return value if in check
     # the function returns the status of the game (Checkmate, stalemate, check, or nothing)
     def check(self, index, isBlack):
-        moves = self.validKingMoves(index, isBlack)
-
+        moves = self.legalMoves(index)
         if isBlack:
             print("isBlack is True,")
             king = self.bitboards["k"]
-            oppAtk = self.bitboards["whiteatk"]
+            oppAtk = self.attackedSquares("white")
         else:
             print("isBlack is false")
             king = self.bitboards["K"]
-            oppAtk = self.bitboards["blackatk"]
-        print(bin(king))
-        print(bin(oppAtk))
+            oppAtk = self.attackedSquares("black")
+        brd.printBitboard(king)
+        print()
+        brd.printBitboard(oppAtk)
         # Checkmate not working right, need to ensure that oppatk & King bitboard > 1 for checkmate
+
         if moves == 0 and king & oppAtk > 0:
             print("Checkmate")
             return -1
@@ -774,4 +775,4 @@ brd = Board()
 brd.board2Bitboard()
 brd.printBoard()
 print()
-brd.printBitboard(brd.bitboards["blackatk"])
+brd.printBitboard(brd.bitboards["whiteatk"])
