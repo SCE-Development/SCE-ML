@@ -1,12 +1,13 @@
 import pygame
 import chessboard as cb
-
+import math
 
 
 class GUI:
     def __init__(self, whitePOV):
         self.BOARDSIZE = 800
-        self.SCREENWIDTH, self.SCREENHEIGHT = self.BOARDSIZE, int(self.BOARDSIZE * 1.125)
+        self.SCREENWIDTH, self.SCREENHEIGHT = self.BOARDSIZE, int(
+            self.BOARDSIZE * 1.125)
         self.TILESIZE = self.SCREENWIDTH >> 3
         pygame.init()
         self.WIN = pygame.display.set_mode(
@@ -58,8 +59,8 @@ class GUI:
                     else:
                         self.selectTile(index)
 
-
-    def pieceToImg(self, piece):  # given char representation, return a scaled image of the piece (e.g. b -> white bishop PNG)
+    # given char representation, return a scaled image of the piece (e.g. b -> white bishop PNG)
+    def pieceToImg(self, piece):
         return pygame.transform.scale(pygame.image.load(f"./Assets/pieces/{piece}.png"), (self.TILESIZE, self.TILESIZE))
 
     # def renderTest(self):  # test board to print the starting condition of the board
@@ -100,10 +101,12 @@ class GUI:
     def checkerPattern(self):
         LIGHTCOLOR = (240, 217, 181)  # color of light square
         DARKCOLOR = (181, 136, 99)  # color of dark square
-        colors = [LIGHTCOLOR, DARKCOLOR]  # put in list to easily alternate with modulo
+        # put in list to easily alternate with modulo
+        colors = [LIGHTCOLOR, DARKCOLOR]
         for col in range(8):
             for row in range(8):
-                tile = pygame.Rect(row * self.TILESIZE, col * self.TILESIZE, self.TILESIZE, self.TILESIZE)
+                tile = pygame.Rect(row * self.TILESIZE, col *
+                                   self.TILESIZE, self.TILESIZE, self.TILESIZE)
                 if self.whitePOV:
                     color = colors[(col + row) % 2]
                 else:
@@ -111,14 +114,22 @@ class GUI:
                 pygame.draw.rect(self.WIN, color, tile)
         pygame.display.update()
 
+    # CHECK ISN'T WORKING PROPERLY
     def renderGameInfo(self):
+        kingIndex = self.boardObj.bitboards["K"] if self.whitesTurn else self.boardObj.bitboards["k"]
+        kingIndex = int(math.log2(kingIndex))
+        checkmate = self.boardObj.check(kingIndex, not self.whitesTurn)
         y = self.BOARDSIZE
         infoBackground = pygame.Rect(0, y, self.BOARDSIZE, self.TILESIZE)
-        pygame.draw.rect(self.WIN, (200,200,200), infoBackground)
+        pygame.draw.rect(self.WIN, (200, 200, 200), infoBackground)
         font = pygame.font.Font(pygame.font.get_default_font(), 25)
-        turn = "White" if self.whitesTurn else "Black"
-        text = font.render(f"{turn}'s turn", True, (0, 0, 0))
-        text_rect = text.get_rect(center=(self.SCREENWIDTH / 2, (self.TILESIZE / 2) + self.BOARDSIZE))
+        if checkmate == -1:
+            text = font.render("Checkmate", True, (0, 0, 0))
+        else:
+            turn = "White" if self.whitesTurn else "Black"
+            text = font.render(f"{turn}'s turn", True, (0, 0, 0))
+        text_rect = text.get_rect(
+            center=(self.SCREENWIDTH / 2, (self.TILESIZE / 2) + self.BOARDSIZE))
         self.WIN.blit(text, text_rect)
         pygame.display.update()
 
@@ -133,7 +144,7 @@ class GUI:
         print(piece)
         if piece == ".":
             return False
-        if (ord(piece) < 97) != self.whitesTurn: # checks if piece is white and is white's turn
+        if (ord(piece) < 97) != self.whitesTurn:  # checks if piece is white and is white's turn
             return False
         return index in self.legalMoves
 
@@ -143,8 +154,8 @@ class GUI:
         pygame.display.update()
 
     def selectTile(self, index):
-        DARKSELECT = (100,111,64)
-        LIGHTSELECT = (130,151,105)
+        DARKSELECT = (100, 111, 64)
+        LIGHTSELECT = (130, 151, 105)
         self.updateScreen()
         x, y = self.coords[index]
         tile = pygame.Rect(x, y, self.TILESIZE, self.TILESIZE)
@@ -156,7 +167,8 @@ class GUI:
         piece = self.boardObj.board[index]
         if piece != ".":
             self.WIN.blit(self.pieceImages[piece], (x, y))
-        self.legalMoves = self.bitBoardToIndexes(self.boardObj.legalMoves(index))
+        self.legalMoves = self.bitBoardToIndexes(
+            self.boardObj.legalMoves(index))
         self.selected = index
 
         for l in self.legalMoves:
@@ -164,7 +176,8 @@ class GUI:
             circleX, circleY = self.coords[l]
             circleX += (self.TILESIZE // 2)
             circleY += (self.TILESIZE // 2)
-            pygame.draw.circle(self.WIN, DARKSELECT, (circleX, circleY), radius)
+            pygame.draw.circle(self.WIN, DARKSELECT,
+                               (circleX, circleY), radius)
 
         pygame.display.update()
 
