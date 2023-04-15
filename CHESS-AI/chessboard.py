@@ -392,7 +392,7 @@ class Board:
 #     00111110 gets the possible moves of the slider in the positive horizontal direction (including capture)
 #
 # This method only works in the positive direction and can only detect the first blocker in its propagation.
-# To get the positive direction moves, the bitboards involved have their endianess reversed with bitSwap() and the same calculations are made
+# To get the negative direction moves, the bitboards involved have their endianess reversed with bitSwap() and the same calculations are made
 # To get multiple blockers in each propagation, the method is ran multiple times with different piece masks
 #   https://www.chessprogramming.org/Efficient_Generation_of_Sliding_Piece_Attacks#Sliding_Attacks_by_Calculation
 #   https://www.chessprogramming.org/Subtracting_a_Rook_from_a_Blocking_Piece
@@ -542,6 +542,8 @@ class Board:
             print("Not a valid move")
             return False
 
+   
+
     # Generates a bitboard of all possible moves of a queen taking blockers into account
     # includes piece capture moves
     # bitwise or of the rookAttack and bishopAttack
@@ -554,24 +556,37 @@ class Board:
     # returns a bitboard of all the legal moves
     def legalMoves(self, index):
         legalBb = self.pseudovalidMoves(index)
-        # temporary bitboard used to iterate all the bits on a bitboard.
-        tempBb = self.pseudovalidMoves(index)
-        enemyatk = 'whiteatk'
+        tempBb = legalBb #temporary bitboard used to iterate all the bits on a bitboard.
+        enemyatk = 'white'
         king = 'k'
         if (self.board[index].isupper()):
-            enemyatk = 'blackatk'
+            enemyatk = 'black'
             king = 'K'
 
         while tempBb > 0:
             end = self.bitboard2Index(tempBb)
-            prevEnd, prevStart = self.board[end], self.board[index]
+
+            prevBoardStart, prevBoardEnd = self.board[index], self.board[end]           #Storing initial board and piece bitboards
+            prevStartBb = self.bitboards[self.board[index]]
+            prevEndPiece = self.board[end]
+            prevWhiteBb = self.bitboards["white"]
+            prevBlackBb = self.bitboards["black"]
+            if prevEndPiece != ".":
+                prevEndPieceBb = self.bitboards[self.board[end]]
+
             self.makeMove(index, end, True)
-            self.board2Bitboard()
-            # Checks if king is in check
-            if (self.bitboards[king] & self.bitboards[enemyatk]):
+
+            enemyatkBb = self.attackedSquares(enemyatk)
+
+            if(self.bitboards[king] & enemyatkBb):        #Checks if king is in check
                 legalBb = self.toggleBit(legalBb, end)
-            self.board[end], self.board[index] = prevEnd, prevStart
-            self.board2Bitboard()
+
+            self.board[index], self.board[end] = prevBoardStart, prevBoardEnd          # restoring board and piece bitboards to initial positions
+            self.bitboards[self.board[index]]  = prevStartBb
+            if prevEndPiece != ".":
+                self.bitboards[self.board[end]] = prevEndPieceBb
+            self.bitboards["white"] = prevWhiteBb
+            self.bitboards["black"] = prevBlackBb
             tempBb = self.toggleBit(tempBb, end)
         return legalBb
 
