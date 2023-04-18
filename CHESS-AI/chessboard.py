@@ -81,6 +81,8 @@ class Board:
             "blackatk": 0b0,
         }
 
+        self.enpassant = 0
+
         self.fileMasks = {
             0: 72340172838076673,
             1: 144680345676153346,
@@ -242,20 +244,20 @@ class Board:
             if self.fileRank[index][1] == 2 and 0b1 << (index + 8) & pieceMask == 0:
                 pawnForwardMask |= pawnBb << 16
             if self.fileRank[index][0] == "a":
-                return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb << 9 & enemyMask))) & uint64
+                return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb << 9 & enemyMask))) | (pawnBb << 9 & self.enpassant) & uint64
             elif self.fileRank[index][0] == "h":
-                return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb << 7 & enemyMask))) & uint64
-            return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb << 7 & enemyMask | pawnBb << 9 & enemyMask))) & uint64
+                return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb << 7 & enemyMask))) | (pawnBb << 7 & self.enpassant) & uint64
+            return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb << 7 & enemyMask | pawnBb << 9 & enemyMask))) | ((pawnBb << 7 | pawnBb << 9) & self.enpassant) & uint64
         elif self.board[index] == 'p':
             pawnForwardMask = pawnBb >> 8
             enemyMask = self.bitboards["white"]
             if self.fileRank[index][1] == 7 and 0b1 << (index - 8) & pieceMask == 0:
                 pawnForwardMask |= pawnBb >> 16
             if self.fileRank[index][0] == "a":
-                return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb >> 7 & enemyMask))) & uint64
+                return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb >> 7 & enemyMask))) | (pawnBb >> 7 & self.enpassant) & uint64
             elif self.fileRank[index][0] == "h":
-                return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb >> 9 & enemyMask))) & uint64
-            return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb >> 7 & enemyMask | pawnBb >> 9 & enemyMask))) & uint64
+                return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb >> 9 & enemyMask))) | (pawnBb >> 9 & self.enpassant) & uint64
+            return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb >> 7 & enemyMask | pawnBb >> 9 & enemyMask))) | ((pawnBb >> 7 | pawnBb >> 9) & self.enpassant) & uint64
         # returns 0 if the index does not refer to a pawn
         print("Not a Pawn")
         return 0
@@ -519,7 +521,18 @@ class Board:
 
     def makeMove(self, start, end, lookingForward=False):
         if lookingForward or 0b1 << end & self.legalMoves(start):
-
+            if 0b1 << start & self.bitboards['p'] and start // 8 == 6 and end // 8 == 4:
+                self.enpassant = 0b1 << (end + 8)
+            elif 0b1 << start & self.bitboards['P'] and start // 8 == 1 and end // 8 == 3:
+                self.enpassant = 0b1 << (end - 8)
+            else: 
+                self.enpassant = 0
+            if not lookingForward:
+                print("\nEn Passant")
+                print(start, end)
+                print(start//8, end//8)
+                self.printBitboard(self.enpassant)
+            
             # if a piece is taken, then the bit corresponding to that index in the taken piece's bitboard is cleared
             if self.board[end] != ".":
                 self.bitboards[self.board[end]] = self.toggleBit(
@@ -571,6 +584,7 @@ class Board:
             prevEndPiece = self.board[end]
             prevWhiteBb = self.bitboards["white"]
             prevBlackBb = self.bitboards["black"]
+            prevEnpassant = self.enpassant
             if prevEndPiece != ".":
                 prevEndPieceBb = self.bitboards[self.board[end]]
 
@@ -587,6 +601,7 @@ class Board:
                 self.bitboards[self.board[end]] = prevEndPieceBb
             self.bitboards["white"] = prevWhiteBb
             self.bitboards["black"] = prevBlackBb
+            self.enpassant = prevEnpassant
             tempBb = self.toggleBit(tempBb, end)
         return legalBb
 
