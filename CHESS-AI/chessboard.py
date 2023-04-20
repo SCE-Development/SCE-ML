@@ -540,6 +540,8 @@ class Board:
                     self.enpassant = 0
                 else:
                     self.enpassant = 0
+            else:
+                self.enpassant = 0
             
             # if a piece is taken, then the bit corresponding to that index in the taken piece's bitboard is cleared
             if self.board[end] != ".":
