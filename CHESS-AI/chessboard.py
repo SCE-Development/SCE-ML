@@ -79,6 +79,7 @@ class Board:
             "black": 0b0,
             "whiteatk": 0b0,
             "blackatk": 0b0,
+            ".": 0
         }
 
         self.enpassant = 0
@@ -521,16 +522,26 @@ class Board:
 
     def makeMove(self, start, end, lookingForward=False):
         if lookingForward or 0b1 << end & self.legalMoves(start):
-            if 0b1 << start & self.bitboards['p'] and start // 8 == 6 and end // 8 == 4:
-                self.enpassant = 0b1 << (end + 8)
-            elif 0b1 << start & self.bitboards['P'] and start // 8 == 1 and end // 8 == 3:
-                self.enpassant = 0b1 << (end - 8)
-            else: 
-                self.enpassant = 0
+            if 0b1 << start & self.bitboards['p']:
+                if start // 8 == 6 and end // 8 == 4:
+                    self.enpassant = 0b1 << (end + 8)
+                elif 0b1 << end & self.enpassant:
+                    self.bitboards[self.board[end + 8]] = self.toggleBit(self.bitboards[self.board[end + 8]], end + 8)
+                    self.board[end + 8] = "."
+                    self.enpassant = 0
+                else:
+                    self.enpassant = 0
+            elif 0b1 << start & self.bitboards['P']:
+                if start // 8 == 1 and end // 8 == 3:
+                    self.enpassant = 0b1 << (end - 8)
+                elif 0b1 << end & self.enpassant:
+                    self.bitboards[self.board[end - 8]] = self.toggleBit(self.bitboards[self.board[end - 8]], end - 8)
+                    self.board[end - 8] = "."
+                    self.enpassant = 0
+                else:
+                    self.enpassant = 0
             if not lookingForward:
                 print("\nEn Passant")
-                print(start, end)
-                print(start//8, end//8)
                 self.printBitboard(self.enpassant)
             
             # if a piece is taken, then the bit corresponding to that index in the taken piece's bitboard is cleared
@@ -585,7 +596,20 @@ class Board:
             prevWhiteBb = self.bitboards["white"]
             prevBlackBb = self.bitboards["black"]
             prevEnpassant = self.enpassant
-            if prevEndPiece != ".":
+            didEnpassant = 0 # 0 for no, 1 for white, -1 for black
+            
+            # if the move is enpassant, then we store the enemy bitboard?
+
+            if 0b1 << end & self.enpassant:
+                if 0b1 << index & self.bitboards['p']:
+                    prevBoardEnd = self.board[end+8]
+                    prevEndPieceBb = self.bitboards[prevEndPiece]
+                    didEnpassant = -1
+                elif 0b1 << index & self.bitboards['P']:
+                    prevBoardEnd = self.board[end-8]
+                    prevEndPieceBb = self.bitboards[prevBoardEnd]
+                    didEnpassant = 1
+            elif prevEndPiece != ".":
                 prevEndPieceBb = self.bitboards[self.board[end]]
 
             self.makeMove(index, end, True)
@@ -595,10 +619,22 @@ class Board:
             if(self.bitboards[king] & enemyatkBb):        #Checks if king is in check
                 legalBb = self.toggleBit(legalBb, end)
 
-            self.board[index], self.board[end] = prevBoardStart, prevBoardEnd          # restoring board and piece bitboards to initial positions
+            self.board[index] = prevBoardStart         # restoring board and piece bitboards to initial positions
             self.bitboards[self.board[index]]  = prevStartBb
-            if prevEndPiece != ".":
-                self.bitboards[self.board[end]] = prevEndPieceBb
+            if didEnpassant < 0:
+                self.board[end] = '.'
+                self.board[end + 8] = prevBoardEnd
+                self.bitboards[prevBoardEnd] = prevEndPieceBb
+            elif didEnpassant > 0:
+                self.board[end] = '.'
+                self.board[end - 8] = prevBoardEnd
+                self.bitboards[prevBoardEnd] = prevEndPieceBb
+            elif prevEndPiece != ".":
+                self.board[end] = prevBoardEnd
+                self.bitboards[prevBoardEnd] = prevEndPieceBb
+            else:
+                self.board[end] = '.'
+                self.bitboards[end] = 0
             self.bitboards["white"] = prevWhiteBb
             self.bitboards["black"] = prevBlackBb
             self.enpassant = prevEnpassant
@@ -655,9 +691,6 @@ class Board:
             print("isBlack is false")
             king = self.bitboards["K"]
             oppAtk = self.attackedSquares("black")
-        brd.printBitboard(king)
-        print()
-        brd.printBitboard(oppAtk)
         # Checkmate not working right, need to ensure that oppatk & King bitboard > 1 for checkmate
 
         if moves == 0 and king & oppAtk > 0:
@@ -803,6 +836,3 @@ class Board:
 ########################################
 brd = Board()
 brd.board2Bitboard()
-brd.printBoard()
-print()
-brd.printBitboard(brd.bitboards["whiteatk"])

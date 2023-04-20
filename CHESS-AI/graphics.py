@@ -54,6 +54,8 @@ class GUI:
                         continue
                     if self.isMakingMove(index):
                         self.makeMove(self.selected, index)
+                        self.boardObj.printBoard()
+                        self.boardObj.printBitboard(self.boardObj.bitboards['P'])
                         self.whitesTurn = not self.whitesTurn
                         self.renderGameInfo()
                     else:
