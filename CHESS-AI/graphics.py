@@ -5,7 +5,7 @@ import math
 
 class GUI:
     def __init__(self, whitePOV):
-        self.BOARDSIZE = 800
+        self.BOARDSIZE = 512
         self.SCREENWIDTH, self.SCREENHEIGHT = self.BOARDSIZE, int(
             self.BOARDSIZE * 1.125)
         self.TILESIZE = self.SCREENWIDTH >> 3
@@ -54,8 +54,6 @@ class GUI:
                         continue
                     if self.isMakingMove(index):
                         self.makeMove(self.selected, index)
-                        self.boardObj.printBoard()
-                        self.boardObj.printBitboard(self.boardObj.bitboards['P'])
                         self.whitesTurn = not self.whitesTurn
                         self.renderGameInfo()
                     else:
@@ -116,7 +114,6 @@ class GUI:
                 pygame.draw.rect(self.WIN, color, tile)
         pygame.display.update()
 
-    # CHECK ISN'T WORKING PROPERLY
     def renderGameInfo(self):
         kingIndex = self.boardObj.bitboards["K"] if self.whitesTurn else self.boardObj.bitboards["k"]
         kingIndex = int(math.log2(kingIndex))
@@ -127,7 +124,6 @@ class GUI:
         font = pygame.font.Font(pygame.font.get_default_font(), 25)
         if checkmate == -1:
             text = font.render("Checkmate", True, (0, 0, 0))
-            return False
         else:
             turn = "White" if self.whitesTurn else "Black"
             text = font.render(f"{turn}'s turn", True, (0, 0, 0))

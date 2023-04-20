@@ -540,9 +540,6 @@ class Board:
                     self.enpassant = 0
                 else:
                     self.enpassant = 0
-            if not lookingForward:
-                print("\nEn Passant")
-                self.printBitboard(self.enpassant)
             
             # if a piece is taken, then the bit corresponding to that index in the taken piece's bitboard is cleared
             if self.board[end] != ".":
@@ -694,9 +691,28 @@ class Board:
         # Checkmate not working right, need to ensure that oppatk & King bitboard > 1 for checkmate
 
         if moves == 0 and king & oppAtk > 0:
+            if isBlack:
+                for key in ('p', 'q', 'r', 'b', 'n'):
+                    tempBb = self.bitboards[key]
+                    while tempBb > 0:
+                        i = self.bitboard2Index(tempBb)
+                        if self.legalMoves(i) > 0:
+                            print('Check')
+                            return -2
+                        tempBb = self.toggleBit(tempBb, i)
+            else:
+                for key in ('P', 'Q', 'R', 'B', 'N'):
+                    tempBb = self.bitboards[key]
+                    while tempBb > 0:
+                        i = self.bitboard2Index(tempBb)
+                        if self.legalMoves(i) > 0:
+                            print('Check')
+                            return -2
+                        tempBb = self.toggleBit(tempBb, i)
             print("Checkmate")
             return -1
         elif king & oppAtk > 0:
+            print('Check')
             return -2
         elif moves == 0b1 << index:
             print("Stalemate")
