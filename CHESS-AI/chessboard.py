@@ -244,9 +244,9 @@ class Board:
             # (mask contain any enemy pieces blocking pawn) XOR (mask of square in front of pawn and any enemies that can be attacked by pawn)
             if self.fileRank[index][1] == 2 and 0b1 << (index + 8) & pieceMask == 0:
                 pawnForwardMask |= pawnBb << 16
-            if self.fileRank[index][0] == "a":
+            if index % 8 == 0:
                 return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb << 9 & enemyMask))) | (pawnBb << 9 & self.enpassant) & uint64
-            elif self.fileRank[index][0] == "h":
+            elif index % 8 == 7:
                 return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb << 7 & enemyMask))) | (pawnBb << 7 & self.enpassant) & uint64
             return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb << 7 & enemyMask | pawnBb << 9 & enemyMask))) | ((pawnBb << 7 | pawnBb << 9) & self.enpassant) & uint64
         elif self.board[index] == 'p':
@@ -254,9 +254,9 @@ class Board:
             enemyMask = self.bitboards["white"]
             if self.fileRank[index][1] == 7 and 0b1 << (index - 8) & pieceMask == 0:
                 pawnForwardMask |= pawnBb >> 16
-            if self.fileRank[index][0] == "a":
+            if index % 8 == 0:
                 return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb >> 7 & enemyMask))) | (pawnBb >> 7 & self.enpassant) & uint64
-            elif self.fileRank[index][0] == "h":
+            elif index % 8 == 7:
                 return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb >> 9 & enemyMask))) | (pawnBb >> 9 & self.enpassant) & uint64
             return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb >> 7 & enemyMask | pawnBb >> 9 & enemyMask))) | ((pawnBb >> 7 | pawnBb >> 9) & self.enpassant) & uint64
         # returns 0 if the index does not refer to a pawn
