@@ -527,6 +527,8 @@ class Board:
                     self.enpassant = 0b1 << (end + 8)
                 elif 0b1 << end & self.enpassant:
                     self.bitboards[self.board[end + 8]] = self.toggleBit(self.bitboards[self.board[end + 8]], end + 8)
+                    print()
+                    self.printBitboard(self.bitboards[self.board[end+8]])
                     self.board[end + 8] = "."
                     self.enpassant = 0
                 else:
@@ -536,6 +538,8 @@ class Board:
                     self.enpassant = 0b1 << (end - 8)
                 elif 0b1 << end & self.enpassant:
                     self.bitboards[self.board[end - 8]] = self.toggleBit(self.bitboards[self.board[end - 8]], end - 8)
+                    print()
+                    self.printBitboard(self.bitboards[self.board[end-8]])
                     self.board[end - 8] = "."
                     self.enpassant = 0
                 else:
@@ -602,7 +606,7 @@ class Board:
             if 0b1 << end & self.enpassant:
                 if 0b1 << index & self.bitboards['p']:
                     prevBoardEnd = self.board[end+8]
-                    prevEndPieceBb = self.bitboards[prevEndPiece]
+                    prevEndPieceBb = self.bitboards[prevBoardEnd]
                     didEnpassant = -1
                 elif 0b1 << index & self.bitboards['P']:
                     prevBoardEnd = self.board[end-8]
