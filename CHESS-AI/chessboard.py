@@ -633,11 +633,11 @@ class Board:
     def check(self, index, isBlack):
         moves = self.legalMoves(index)
         if isBlack:
-            print("isBlack is True,")
+            #print("isBlack is True,")
             king = self.bitboards["k"]
             oppAtk = self.attackedSquares("white")
         else:
-            print("isBlack is false")
+            #print("isBlack is false")
             king = self.bitboards["K"]
             oppAtk = self.attackedSquares("black")
         brd.printBitboard(king)

@@ -185,7 +185,7 @@ class GUI:
 
         pieceName = self.pieceToName(piece)
         print()
-        print("The above board is the overall bitboard for white/black")
+        print("The two boards below represent the every possible move the player can make and the position the enemy king")
         print()
         print(pieceName + " has been selected")
         self.boardObj.printBitboard(self.boardObj.legalMoves(index))
