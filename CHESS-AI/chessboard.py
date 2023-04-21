@@ -787,7 +787,7 @@ class Board:
 
 ########################################
 brd = Board()
-brd.board2Bitboard()
+#$brd.board2Bitboard()
 brd.printBoard()
 print()
 brd.printBitboard(brd.bitboards["whiteatk"])

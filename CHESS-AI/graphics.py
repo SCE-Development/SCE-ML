@@ -1,5 +1,6 @@
 import pygame
 import chessboard as cb
+from chessboard import *
 import math
 
 
@@ -41,6 +42,7 @@ class GUI:
         self.updateScreen()
         self.renderGameInfo()
         while run:
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:  # exit button on top right
                     run = False
@@ -181,6 +183,13 @@ class GUI:
             pygame.draw.circle(self.WIN, DARKSELECT,
                                (circleX, circleY), radius)
 
+        pieceName = self.pieceToName(piece)
+        print()
+        print("The above board is the overall bitboard for white/black")
+        print()
+        print(pieceName + " has been selected")
+        self.boardObj.printBitboard(self.boardObj.legalMoves(index))
+
         pygame.display.update()
 
     def mousePosToIndex(self, mousePos):
@@ -204,7 +213,34 @@ class GUI:
     def indexToRankFile(self, index):
         return ("ABCDEFGH")[index % 8] + str((index // 8) + 1)
 
+    def pieceToName(self, piece):
+        pieceName = ""
+        if piece == 'N':
+            pieceName = "White Knight"
+        elif piece == 'K':
+            pieceName = "White King"
+        elif piece == 'P':
+            pieceName = "White Pawn"
+        elif piece == 'Q':
+            pieceName = "White Queen"
+        elif piece == 'R':
+            pieceName = "White Rook"
+        elif piece == 'B':
+            pieceName = "White Bishop"
+        if piece == 'n':
+            pieceName = "Black Knight"
+        elif piece == 'k':
+            pieceName = "Black King"
+        elif piece == 'p':
+            pieceName = "Black Pawn"
+        elif piece == 'q':
+            pieceName = "Black Queen"
+        elif piece == 'r':
+            pieceName = "Black Rook"
+        elif piece == 'b':
+            pieceName = "Black Bishop"
 
+        return pieceName
 if __name__ == "__main__":
     playing = "?"
     while playing not in ("b", "w", "black", "white"):
@@ -215,3 +251,4 @@ if __name__ == "__main__":
 
     gui = GUI(whitePOV)
     gui.main()
+
