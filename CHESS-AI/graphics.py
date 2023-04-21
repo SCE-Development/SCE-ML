@@ -145,7 +145,7 @@ class GUI:
         if self.selected is None:
             return False
         piece = self.boardObj.board[self.selected]
-        print(piece)
+        #print(piece)
         if piece == ".":
             return False
         if (ord(piece) < 97) != self.whitesTurn:  # checks if piece is white and is white's turn
@@ -185,9 +185,11 @@ class GUI:
 
         pieceName = self.pieceToName(piece)
         print()
-        print("The two boards below represent the every possible move the player can make and the position the enemy king")
+        print("The two boards below represent the every possible move the player can make and the position pf the enemy king")
         print()
         print(pieceName + " has been selected")
+        print()
+        print("All Possible move of the piece selected")
         self.boardObj.printBitboard(self.boardObj.legalMoves(index))
 
         pygame.display.update()

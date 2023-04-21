@@ -640,9 +640,13 @@ class Board:
             #print("isBlack is false")
             king = self.bitboards["K"]
             oppAtk = self.attackedSquares("black")
+        print()
+        print("EnemyKingBitBoard")
         brd.printBitboard(king)
         print()
+        print("All Possible Moves BitBoard")
         brd.printBitboard(oppAtk)
+        print()
         # Checkmate not working right, need to ensure that oppatk & King bitboard > 1 for checkmate
 
         if moves == 0 and king & oppAtk > 0:
