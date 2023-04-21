@@ -245,20 +245,20 @@ class Board:
             if self.fileRank[index][1] == 2 and 0b1 << (index + 8) & pieceMask == 0:
                 pawnForwardMask |= pawnBb << 16
             if index % 8 == 0:
-                return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb << 9 & enemyMask))) | (pawnBb << 9 & self.enpassant) & uint64
+                return (((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb << 9 & enemyMask))) | (pawnBb << 9 & self.enpassant)) & uint64
             elif index % 8 == 7:
-                return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb << 7 & enemyMask))) | (pawnBb << 7 & self.enpassant) & uint64
-            return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb << 7 & enemyMask | pawnBb << 9 & enemyMask))) | ((pawnBb << 7 | pawnBb << 9) & self.enpassant) & uint64
+                return (((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb << 7 & enemyMask))) | (pawnBb << 7 & self.enpassant)) & uint64
+            return (((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb << 7 & enemyMask | pawnBb << 9 & enemyMask))) | ((pawnBb << 7 | pawnBb << 9) & self.enpassant)) & uint64
         elif self.board[index] == 'p':
             pawnForwardMask = pawnBb >> 8
             enemyMask = self.bitboards["white"]
             if self.fileRank[index][1] == 7 and 0b1 << (index - 8) & pieceMask == 0:
                 pawnForwardMask |= pawnBb >> 16
             if index % 8 == 0:
-                return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb >> 7 & enemyMask))) | (pawnBb >> 7 & self.enpassant) & uint64
+                return (((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb >> 7 & enemyMask))) | (pawnBb >> 7 & self.enpassant)) & uint64
             elif index % 8 == 7:
-                return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb >> 9 & enemyMask))) | (pawnBb >> 9 & self.enpassant) & uint64
-            return ((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb >> 7 & enemyMask | pawnBb >> 9 & enemyMask))) | ((pawnBb >> 7 | pawnBb >> 9) & self.enpassant) & uint64
+                return (((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb >> 9 & enemyMask))) | (pawnBb >> 9 & self.enpassant)) & uint64
+            return (((pawnForwardMask & pieceMask) ^ (pawnForwardMask | (pawnBb >> 7 & enemyMask | pawnBb >> 9 & enemyMask))) | ((pawnBb >> 7 | pawnBb >> 9) & self.enpassant)) & uint64
         # returns 0 if the index does not refer to a pawn
         print("Not a Pawn")
         return 0
@@ -592,7 +592,11 @@ class Board:
 
         while tempBb > 0:
             end = self.bitboard2Index(tempBb)
-
+            self.printBitboard(tempBb)
+            print(bin(tempBb))
+            print(bin(18446744073709551615))
+            print(tempBb)
+            print(index, end)
             prevBoardStart, prevBoardEnd = self.board[index], self.board[end]           #Storing initial board and piece bitboards
             prevStartBb = self.bitboards[self.board[index]]
             prevEndPiece = self.board[end]
@@ -788,7 +792,9 @@ class Board:
                 else:
                     attacked |= 0b1 << (index + 7) | 0b1 << (index + 9)
             elif 0b1 << index & self.bitboards['p']:
-                if index % 8 == 0:
+                if index // 8 == 0:
+                    continue
+                elif index % 8 == 0:
                     attacked |= 0b1 << (index - 7)
                 elif index % 8 == 7:
                     attacked |= 0b1 << (index - 9)
