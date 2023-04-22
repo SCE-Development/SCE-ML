@@ -141,7 +141,7 @@ class GUI:
         if self.selected is None:
             return False
         piece = self.boardObj.board[self.selected]
-        print(piece)
+        # print(piece)
         if piece == ".":
             return False
         if (ord(piece) < 97) != self.whitesTurn:  # checks if piece is white and is white's turn
