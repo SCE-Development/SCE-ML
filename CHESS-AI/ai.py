@@ -1,0 +1,3 @@
+#def minimax
+
+#def score
