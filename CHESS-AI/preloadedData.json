@@ -45,7 +45,8 @@
             "white": 0,
             "black": 0,
             "whiteatk": 0,
-            "blackatk": 0
+            "blackatk": 0,
+            ".": 0
   },
 
   "knightMoves": [

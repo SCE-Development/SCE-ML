@@ -55,6 +55,12 @@ class GUI:
                     if self.isMakingMove(index):
                         self.makeMove(self.selected, index)
                         self.whitesTurn = not self.whitesTurn
+                        if self.whitesTurn:
+                            print()
+                            self.boardObj.printBitboard(self.boardObj.bitboards['white'])
+                        else:
+                            print()
+                            self.boardObj.printBitboard(self.boardObj.bitboards['black'])
                         self.renderGameInfo()
                     else:
                         self.selectTile(index)
