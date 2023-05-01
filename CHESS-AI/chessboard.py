@@ -57,6 +57,10 @@ class Board:
         }
 
         self.enpassant = 0
+        self.WKingCastle = True
+        self.WQueenCastle = True
+        self.BKingCastle = True
+        self.BQueenCastle = True
 
     # function that takes self.board from the Board object and populates self.bitboards
 
@@ -389,6 +393,27 @@ class Board:
 
     def makeMove(self, start, end, lookingForward=False):
         if lookingForward or 0b1 << end & self.legalMoves(start):
+            #check white side castle
+            #if 0b1 << start & self.bitboards['K']:
+             #   if self.WKingCastle:
+
+        
+            if 0b1 << start & self.bitboards['K']:
+                self.WKingCastle = False
+                self.WQueenCastle = False
+            elif 0b1 << start & self.bitboards['k']:
+                self.BKingCastle = False
+                self.BQueenCastle = False
+            elif 0b1 << start & self.bitboards['r'] & self.fileMasks[0]:
+                self.BQueenCastle = False
+            elif 0b1 << start & self.bitboards['r'] & self.fileMasks[7]:
+                self.BKingCastle = False
+            elif 0b1 << start & self.bitboards['R'] & self.fileMasks[0]:
+                self.WQueenCastle = False
+            elif 0b1 << start & self.bitboards['R'] & self.fileMasks[7]:
+                self.WKingCastle = False
+            
+
             if 0b1 << start & self.bitboards['p']:
                 if start // 8 == 6 and end // 8 == 4:
                     self.enpassant = 0b1 << (end + 8)
