@@ -123,12 +123,6 @@ class Board:
         # returns 0 if the index does not refer to a pawn
         print("Not a Pawn")
         return 0
-    
-    def promote(self, index, isBlack):
-        if isBlack:
-            self.bitboards['q'] |= 0b1 << index
-        else:
-            self.bitboards['Q'] |= 0b1 << index
 
     # used to generate knight moves bitboards for all squares (These values are stored in self.knightMoves)
     # we do not call this function, it was only used to generate bitboards
@@ -399,16 +393,12 @@ class Board:
                 elif end // 8 == 0:
                     if self.board[end] != ".":
                         self.bitboards[self.board[end]] -= 0b1 << end
-                        print('eaten')
-                        self.printBitboard(self.bitboards[self.board[end]])
+                        self.bitboards['white'] = self.toggleBit(self.bitboards['white'], end)
                     self.board[end] = 'q'
                     self.board[start] = '.'
                     self.bitboards['p'] -= 0b1 << start
-                    brd.promote(end, True)
-                    self.bitboards["white"] = self.bitboards['B'] | self.bitboards['N'] | self.bitboards[
-                    'R'] | self.bitboards['Q'] | self.bitboards['P'] | self.bitboards["K"]
-                    self.bitboards["black"] = self.bitboards['b'] | self.bitboards['n'] | self.bitboards[
-                    'r'] | self.bitboards['q'] | self.bitboards['p'] | self.bitboards['k']
+                    self.bitboards['black'] = self.toggleBit(self.toggleBit(self.bitboards['black'], start), end)
+                    self.bitboards['q'] |= 0b1 << end
                     return
                 else:
                     self.enpassant = 0
@@ -422,16 +412,12 @@ class Board:
                 elif end // 8 == 7:
                     if self.board[end] != ".":
                         self.bitboards[self.board[end]] -= 0b1 << end
-                        print('eaten')
-                        self.printBitboard(self.bitboards[self.board[end]])
+                        self.bitboards['black'] = self.toggleBit(self.bitboards['black'], end)
                     self.board[end] = 'Q'
                     self.board[start] = '.'
                     self.bitboards['P'] -= 0b1 << start
-                    self.promote(end, False)
-                    self.bitboards["white"] = self.bitboards['B'] | self.bitboards['N'] | self.bitboards[
-                    'R'] | self.bitboards['Q'] | self.bitboards['P'] | self.bitboards["K"]
-                    self.bitboards["black"] = self.bitboards['b'] | self.bitboards['n'] | self.bitboards[
-                    'r'] | self.bitboards['q'] | self.bitboards['p'] | self.bitboards['k']
+                    self.bitboards['white'] = self.toggleBit(self.toggleBit(self.bitboards['white'], start), end)
+                    self.bitboards['Q'] |= 0b1 << end
                     return
                 else:
                     self.enpassant = 0
@@ -504,6 +490,13 @@ class Board:
                     didEnpassant = 1
             elif prevEndPiece != ".":
                 prevEndPieceBb = self.bitboards[self.board[end]]
+            
+            if end // 8 == 0 and 0b1 << index & self.bitboards['p']:
+                previousQueenBb = self.bitboards['q']
+            elif end // 8 == 7 and 0b1 << index & self.bitboards['P']:
+                previousQueenBb = self.bitboards['Q']
+
+        
 
             self.makeMove(index, end, True)
 
@@ -531,6 +524,10 @@ class Board:
             self.bitboards["white"] = prevWhiteBb
             self.bitboards["black"] = prevBlackBb
             self.enpassant = prevEnpassant
+            if end // 8 == 0 and 0b1 << index & self.bitboards['p']:
+                self.bitboards['q'] = previousQueenBb
+            elif end // 8 == 7 and 0b1 << index & self.bitboards['P']:
+                self.bitboards['Q'] = previousQueenBb
             tempBb = self.toggleBit(tempBb, end)
         return legalBb
 

@@ -55,12 +55,14 @@ class GUI:
                     if self.isMakingMove(index):
                         self.makeMove(self.selected, index)
                         self.whitesTurn = not self.whitesTurn
-                        if self.whitesTurn:
-                            print()
-                            self.boardObj.printBitboard(self.boardObj.bitboards['white'])
-                        else:
-                            print()
-                            self.boardObj.printBitboard(self.boardObj.bitboards['black'])
+                        print('white queen')
+                        self.boardObj.printBitboard(self.boardObj.bitboards['Q'])
+                        print('black queen')
+                        self.boardObj.printBitboard(self.boardObj.bitboards['q'])
+                        print("white")
+                        self.boardObj.printBitboard(self.boardObj.bitboards['white'])
+                        print("black")
+                        self.boardObj.printBitboard(self.boardObj.bitboards['black'])
                         self.renderGameInfo()
                     else:
                         self.selectTile(index)
