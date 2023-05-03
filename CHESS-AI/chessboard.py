@@ -431,6 +431,41 @@ class Board:
                     self.BKingCastle = False
                     self.BQueenCastle = False
                     return
+                
+            elif 0b1 << start & self.bitboards['K']:
+                if end == 6:
+                    #update rook position
+                    self.bitboards[self.board[7]] = self.toggleBit(self.toggleBit(self.bitboards[self.board[7]], 7), 5)
+                    self.board[5], self.board[7] = self.board[7], "."
+
+                    #update king position
+                    self.bitboards[self.board[start]] = self.toggleBit(self.toggleBit(self.bitboards[self.board[start]], start), end)
+                    self.board[end], self.board[start] = self.board[start], "."
+                    # update the bitboards of white and black pieces
+                    self.bitboards["white"] = self.bitboards['B'] | self.bitboards['N'] | self.bitboards[
+                        'R'] | self.bitboards['Q'] | self.bitboards['P'] | self.bitboards["K"]
+                    self.bitboards["black"] = self.bitboards['b'] | self.bitboards['n'] | self.bitboards[
+                        'r'] | self.bitboards['q'] | self.bitboards['p'] | self.bitboards['k']
+                        
+                    self.WKingCastle = False
+                    self.WQueenCastle = False
+                    return
+                elif end == 2: 
+                    #update rook position
+                    self.bitboards[self.board[0]] = self.toggleBit(self.toggleBit(self.bitboards[self.board[0]], 0), 3)
+                    self.board[3], self.board[0] = self.board[0], "."
+                    #update king position
+                    self.bitboards[self.board[start]] = self.toggleBit(self.toggleBit(self.bitboards[self.board[start]], start), end)
+                    self.board[end], self.board[start] = self.board[start], "."
+                    # update the bitboards of white and black pieces
+                    self.bitboards["white"] = self.bitboards['B'] | self.bitboards['N'] | self.bitboards[
+                        'R'] | self.bitboards['Q'] | self.bitboards['P'] | self.bitboards["K"]
+                    self.bitboards["black"] = self.bitboards['b'] | self.bitboards['n'] | self.bitboards[
+                        'r'] | self.bitboards['q'] | self.bitboards['p'] | self.bitboards['k']
+                        
+                    self.WKingCastle = False
+                    self.WQueenCastle = False
+                    return
 
             if 0b1 << start & self.bitboards['K']:
                 self.WKingCastle = False
@@ -613,6 +648,10 @@ class Board:
         BQueenCastleMask = 1008806316530991104
         BQueenCheckMask = 864691128455135232
         
+        WKingCastleMask = 96
+        WQueenCastleMask = 14
+        WQueenCheckMask = 12
+
         castleBb = 0;
         occBb = self.bitboards['white'] | self.bitboards['black']
 
@@ -623,6 +662,14 @@ class Board:
                     castleBb |= (0b1 << (index + 2))
             if self.BQueenCastle:
                 if (not (BQueenCastleMask &  occBb)) and not ((0b1 << index | BQueenCheckMask) & atkedSquares):
+                    castleBb |= (0b1 << (index -2))
+        else:
+            atkedSquares = self.attackedSquares('black')
+            if self.WKingCastle:
+                if (not (WKingCastleMask &  occBb)) and not ((0b1 << index | WKingCastleMask) & atkedSquares):
+                    castleBb |= (0b1 << (index + 2))
+            if self.BQueenCastle:
+                if (not (WQueenCastleMask &  occBb)) and not ((0b1 << index | WQueenCheckMask) & atkedSquares):
                     castleBb |= (0b1 << (index -2))
         
         return castleBb
@@ -656,7 +703,7 @@ class Board:
         elif temp == "R":
             return self.rookAttack(index, False)
         elif temp == "K":
-            return self.validKingMoves(index, False)
+            return self.validKingMoves(index, False) | self.castleMoves(index, False)
         else:
             return 0
 
