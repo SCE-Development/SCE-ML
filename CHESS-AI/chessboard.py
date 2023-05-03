@@ -395,8 +395,8 @@ class Board:
     def makeMove(self, start, end, lookingForward=False):
         if lookingForward or 0b1 << end & self.legalMoves(start):
             
-            if 0b1 << start & self.bitboards['k']:
-                if end == 62:
+            if 0b1 << start & self.bitboards['k'] :
+                if end == 62 and self.BKingCastle:
                     
                     #update rook position
                     self.bitboards[self.board[63]] = self.toggleBit(self.toggleBit(self.bitboards[self.board[63]], 63), 61)
@@ -415,7 +415,7 @@ class Board:
                     self.BQueenCastle = False
                     return
                     
-                elif end == 58:
+                elif end == 58 and self.BQueenCastle:
                     #update rook position
                     self.bitboards[self.board[56]] = self.toggleBit(self.toggleBit(self.bitboards[self.board[56]], 56), 59)
                     self.board[59], self.board[56] = self.board[56], "."
@@ -433,7 +433,7 @@ class Board:
                     return
                 
             elif 0b1 << start & self.bitboards['K']:
-                if end == 6:
+                if end == 6 and self.WKingCastle:
                     #update rook position
                     self.bitboards[self.board[7]] = self.toggleBit(self.toggleBit(self.bitboards[self.board[7]], 7), 5)
                     self.board[5], self.board[7] = self.board[7], "."
@@ -450,7 +450,7 @@ class Board:
                     self.WKingCastle = False
                     self.WQueenCastle = False
                     return
-                elif end == 2: 
+                elif end == 2 and self.WQueenCastle: 
                     #update rook position
                     self.bitboards[self.board[0]] = self.toggleBit(self.toggleBit(self.bitboards[self.board[0]], 0), 3)
                     self.board[3], self.board[0] = self.board[0], "."
