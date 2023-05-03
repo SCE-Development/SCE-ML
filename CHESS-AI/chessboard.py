@@ -668,7 +668,7 @@ class Board:
             if self.WKingCastle:
                 if (not (WKingCastleMask &  occBb)) and not ((0b1 << index | WKingCastleMask) & atkedSquares):
                     castleBb |= (0b1 << (index + 2))
-            if self.BQueenCastle:
+            if self.WQueenCastle:
                 if (not (WQueenCastleMask &  occBb)) and not ((0b1 << index | WQueenCheckMask) & atkedSquares):
                     castleBb |= (0b1 << (index -2))
         
