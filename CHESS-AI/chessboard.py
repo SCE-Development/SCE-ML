@@ -1,6 +1,7 @@
 import struct
 import numpy as np
 import json
+import copy
 
 class Board:
 
@@ -393,11 +394,44 @@ class Board:
 
     def makeMove(self, start, end, lookingForward=False):
         if lookingForward or 0b1 << end & self.legalMoves(start):
-            #check white side castle
-            #if 0b1 << start & self.bitboards['K']:
-             #   if self.WKingCastle:
+            
+            if 0b1 << start & self.bitboards['k']:
+                if end == 62:
+                    
+                    #update rook position
+                    self.bitboards[self.board[63]] = self.toggleBit(self.toggleBit(self.bitboards[self.board[63]], 63), 61)
+                    self.board[61], self.board[63] = self.board[63], "."
 
-        
+                    #update king position
+                    self.bitboards[self.board[start]] = self.toggleBit(self.toggleBit(self.bitboards[self.board[start]], start), end)
+                    self.board[end], self.board[start] = self.board[start], "."
+                    # update the bitboards of white and black pieces
+                    self.bitboards["white"] = self.bitboards['B'] | self.bitboards['N'] | self.bitboards[
+                        'R'] | self.bitboards['Q'] | self.bitboards['P'] | self.bitboards["K"]
+                    self.bitboards["black"] = self.bitboards['b'] | self.bitboards['n'] | self.bitboards[
+                        'r'] | self.bitboards['q'] | self.bitboards['p'] | self.bitboards['k']
+                        
+                    self.BKingCastle = False
+                    self.BQueenCastle = False
+                    return
+                    
+                elif end == 58:
+                    #update rook position
+                    self.bitboards[self.board[56]] = self.toggleBit(self.toggleBit(self.bitboards[self.board[56]], 56), 59)
+                    self.board[59], self.board[56] = self.board[56], "."
+                    #update king position
+                    self.bitboards[self.board[start]] = self.toggleBit(self.toggleBit(self.bitboards[self.board[start]], start), end)
+                    self.board[end], self.board[start] = self.board[start], "."
+                    # update the bitboards of white and black pieces
+                    self.bitboards["white"] = self.bitboards['B'] | self.bitboards['N'] | self.bitboards[
+                        'R'] | self.bitboards['Q'] | self.bitboards['P'] | self.bitboards["K"]
+                    self.bitboards["black"] = self.bitboards['b'] | self.bitboards['n'] | self.bitboards[
+                        'r'] | self.bitboards['q'] | self.bitboards['p'] | self.bitboards['k']
+                        
+                    self.BKingCastle = False
+                    self.BQueenCastle = False
+                    return
+
             if 0b1 << start & self.bitboards['K']:
                 self.WKingCastle = False
                 self.WQueenCastle = False
@@ -508,11 +542,18 @@ class Board:
 
         while tempBb > 0:
             end = self.bitboard2Index(tempBb)
+            prevBoard  = copy.deepcopy(self.board)
             prevBoardStart, prevBoardEnd = self.board[index], self.board[end]           #Storing initial board and piece bitboards
-            prevStartBb = self.bitboards[self.board[index]]
-            prevEndPiece = self.board[end]
+            prevStartBb = self.bitboards[self.board[index]] 
+            prevEndPiece = self.board[end] # do this for rook
+            
+
+            prevWhiteRookBb = self.bitboards["R"]
+            prevBlackRookBb = self.bitboards["r"]
+
             prevWhiteBb = self.bitboards["white"]
             prevBlackBb = self.bitboards["black"]
+            prevBKCastle, prevBQCastle, prevWKCastle, prevWQCastle = self.BKingCastle, self.BQueenCastle, self.WKingCastle, self.WQueenCastle
             prevEnpassant = self.enpassant
             didEnpassant = 0 # 0 for no, 1 for white, -1 for black
             
@@ -539,6 +580,9 @@ class Board:
 
             self.board[index] = prevBoardStart         # restoring board and piece bitboards to initial positions
             self.bitboards[self.board[index]]  = prevStartBb
+            self.BKingCastle, self.BQueenCastle, self.WKingCastle, self.WQueenCastle = prevBKCastle, prevBQCastle, prevWKCastle, prevWQCastle
+            
+
             if didEnpassant < 0:
                 self.board[end] = '.'
                 self.board[end + 8] = prevBoardEnd
@@ -553,11 +597,37 @@ class Board:
             else:
                 self.board[end] = '.'
                 self.bitboards[end] = 0
+
+            self.enpassant = prevEnpassant
+            self.bitboards["R"] = prevWhiteRookBb
+            self.bitboards["r"] = prevBlackRookBb
             self.bitboards["white"] = prevWhiteBb
             self.bitboards["black"] = prevBlackBb
-            self.enpassant = prevEnpassant
+            self.board = prevBoard
             tempBb = self.toggleBit(tempBb, end)
         return legalBb
+    
+    def castleMoves(self, index, isBlack):
+        
+        BKingCastleMask = 6917529027641081856
+        BQueenCastleMask = 1008806316530991104
+        BQueenCheckMask = 864691128455135232
+        
+        castleBb = 0;
+        occBb = self.bitboards['white'] | self.bitboards['black']
+
+        if isBlack:
+            atkedSquares = self.attackedSquares('white')
+            if self.BKingCastle:
+                if (not (BKingCastleMask &  occBb)) and not ((0b1 << index | BKingCastleMask) & atkedSquares):
+                    castleBb |= (0b1 << (index + 2))
+            if self.BQueenCastle:
+                if (not (BQueenCastleMask &  occBb)) and not ((0b1 << index | BQueenCheckMask) & atkedSquares):
+                    castleBb |= (0b1 << (index -2))
+        
+        return castleBb
+                
+
 
     # Returns a bitboard of the pseudovalid moves a piece could make at the given index.
     # wrapper function for all the move bitboard generators
@@ -574,7 +644,7 @@ class Board:
         elif temp == "r":
             return self.rookAttack(index, True)
         elif temp == "k":
-            return self.validKingMoves(index, True)
+            return self.validKingMoves(index, True) | self.castleMoves(index, True)
         elif temp == "P":
             return self.pawnMoves(index)
         elif temp == "N":
@@ -714,6 +784,10 @@ class Board:
                     attacked |= 0b1 << (index - 9)
                 else:
                     attacked |= 0b1 << (index - 7) | 0b1 << (index - 9)
+            elif 0b1 << index & self.bitboards['k'] :
+                attacked |= self.validKingMoves(index, True)
+            elif 0b1 << index & self.bitboards['K']:
+                attacked |= self.validKingMoves(index, False)
             else:
                 attacked |= self.pseudovalidMoves(index)
         return attacked
