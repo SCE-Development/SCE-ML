@@ -30,7 +30,7 @@ class AI:
         self.boardObj.board = boardCopy
         self.boardObj.bitboards = bitboardsCopy
 
-        return
+        return selfMaterial - enemyMaterial + (selfMobility - enemyMobility)
     
     
     def countMaterial(self):
@@ -158,4 +158,4 @@ class AI:
     #    return best
 
 ai = AI()
-ai.evaluate(12, 28, False)
+print(ai.evaluate(12, 28, False))
