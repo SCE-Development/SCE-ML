@@ -13,70 +13,89 @@ class AI:
         boardCopy = self.boardObj.board.copy()
         bitboardsCopy = self.boardObj.bitboards.copy()
         self.boardObj.makeMove(start, end)
+
+        self.boardObj.printBoard()
         
-        ai.boardObj.printBoard()
         selfMaterial, enemyMaterial, selfMobility, enemyMobility = 0, 0, 0, 0
 
         if isBlack:
-            selfMaterial, enemyMaterial = self.countMaterial()
-            print('black')
+            selfMaterial, enemyMaterial, selfMobility, enemyMobility = self.countMaterial()
         else:
-            enemyMaterial, selfMaterial = self.countMaterial()
-            print("white")
+            enemyMaterial, selfMaterial, enemyMobility, selfMobility = self.countMaterial()
         
-        print(selfMaterial, enemyMaterial)
+        print(f'self {selfMaterial} {selfMobility}')
         
+        print(f'enemy {enemyMaterial} {enemyMobility}')
 
         self.boardObj.board = boardCopy
         self.boardObj.bitboards = bitboardsCopy
+
         return
     
     
     def countMaterial(self):
-        black, white = 0, 0
+        blackMaterial, whiteMaterial, blackMobility, whiteMobility = 0, 0, 0, 0
         for type in ('p', 'n', 'b', 'r', 'q', 'k'):
             pieces = self.boardObj.bitboards[type]
             while pieces > 0:
+
+                index = self.boardObj.bitboard2Index(pieces)
+
+                possibleMoves = self.boardObj.legalMoves(index)
+                while possibleMoves > 0:
+                    blackMobility += 1
+                    possibleMoves ^= 0b1 << self.boardObj.bitboard2Index(possibleMoves)
+
                 if type == 'p':
-                    black += 1
-                    pieces ^= 0b1 << self.boardObj.bitboard2Index(pieces)
+                    blackMaterial += 1
+                    pieces ^= 0b1 << index
                 elif type == 'n':
-                    black += 3
-                    pieces ^= 0b1 << self.boardObj.bitboard2Index(pieces)
+                    blackMaterial += 3
+                    pieces ^= 0b1 << index
                 elif type == 'b':
-                    black += 3
-                    pieces ^= 0b1 << self.boardObj.bitboard2Index(pieces)
+                    blackMaterial += 3
+                    pieces ^= 0b1 << index
                 elif type == 'r':
-                    black += 5
-                    pieces ^= 0b1 << self.boardObj.bitboard2Index(pieces)
+                    blackMaterial += 5
+                    pieces ^= 0b1 << index
                 elif type == 'q':
-                    black += 9
-                    pieces ^= 0b1 << self.boardObj.bitboard2Index(pieces)
+                    blackMaterial += 9
+                    pieces ^= 0b1 << index
                 else:
-                    black += 200
-                    pieces ^= 0b1 << self.boardObj.bitboard2Index(pieces)
+                    blackMaterial += 200
+                    pieces ^= 0b1 << index
+                
         for type in ('P', 'N', 'B', 'R', 'Q', 'K'):
             pieces = self.boardObj.bitboards[type]
             while pieces > 0:
+
+                index = self.boardObj.bitboard2Index(pieces)
+
+                possibleMoves = self.boardObj.legalMoves(index)
+                while possibleMoves > 0:
+                    whiteMobility += 1
+                    possibleMoves ^= 0b1 << self.boardObj.bitboard2Index(possibleMoves)
+
                 if type == 'P':
-                    white += 1
-                    pieces ^= 0b1 << self.boardObj.bitboard2Index(pieces)
+                    whiteMaterial += 1
+                    pieces ^= 0b1 << index 
                 elif type == 'N':
-                    white += 3
-                    pieces ^= 0b1 << self.boardObj.bitboard2Index(pieces)
+                    whiteMaterial += 3
+                    pieces ^= 0b1 << index
                 elif type == 'B':
-                    white += 3
-                    pieces ^= 0b1 << self.boardObj.bitboard2Index(pieces)
+                    whiteMaterial += 3
+                    pieces ^= 0b1 << index
                 elif type == 'R':
-                    white += 5
-                    pieces ^= 0b1 << self.boardObj.bitboard2Index(pieces)
+                    whiteMaterial += 5
+                    pieces ^= 0b1 << index
                 elif type == 'Q':
-                    white += 9
-                    pieces ^= 0b1 << self.boardObj.bitboard2Index(pieces)
+                    whiteMaterial += 9
+                    pieces ^= 0b1 << index
                 else:
-                    white += 200
-                    pieces ^= 0b1 << self.boardObj.bitboard2Index(pieces)
-        return black, white
+                    whiteMaterial += 200
+                    pieces ^= 0b1 << index
+
+        return blackMaterial, whiteMaterial, blackMobility, whiteMobility
     
 
     def getMoves(self):
@@ -139,5 +158,4 @@ class AI:
     #    return best
 
 ai = AI()
-ai.evaluate(1, 16, False)
-ai.boardObj.printBoard()
+ai.evaluate(12, 28, False)
