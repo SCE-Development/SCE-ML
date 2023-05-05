@@ -1,5 +1,8 @@
 import chessboard as cb
-
+import cProfile
+import pstats
+import timeit
+import time
 class AI:
 
     def __init__(self):
@@ -13,8 +16,6 @@ class AI:
         boardCopy = self.boardObj.board.copy()
         bitboardsCopy = self.boardObj.bitboards.copy()
         self.boardObj.makeMove(start, end)
-
-        self.boardObj.printBoard()
         
         selfMaterial, enemyMaterial, selfMobility, enemyMobility = 0, 0, 0, 0
 
@@ -22,11 +23,6 @@ class AI:
             selfMaterial, enemyMaterial, selfMobility, enemyMobility = self.countMaterial()
         else:
             enemyMaterial, selfMaterial, enemyMobility, selfMobility = self.countMaterial()
-        
-        print(f'self {selfMaterial} {selfMobility}')
-        
-        print(f'enemy {enemyMaterial} {enemyMobility}')
-
         self.boardObj.board = boardCopy
         self.boardObj.bitboards = bitboardsCopy
 
@@ -44,26 +40,21 @@ class AI:
                 possibleMoves = self.boardObj.legalMoves(index)
                 while possibleMoves > 0:
                     blackMobility += 1
-                    possibleMoves ^= 0b1 << self.boardObj.bitboard2Index(possibleMoves)
+                    possibleMoves &= possibleMoves - 1
 
                 if type == 'p':
                     blackMaterial += 1
-                    pieces ^= 0b1 << index
                 elif type == 'n':
                     blackMaterial += 3
-                    pieces ^= 0b1 << index
                 elif type == 'b':
                     blackMaterial += 3
-                    pieces ^= 0b1 << index
                 elif type == 'r':
                     blackMaterial += 5
-                    pieces ^= 0b1 << index
                 elif type == 'q':
                     blackMaterial += 9
-                    pieces ^= 0b1 << index
                 else:
                     blackMaterial += 200
-                    pieces ^= 0b1 << index
+                pieces &= pieces - 1
                 
         for type in ('P', 'N', 'B', 'R', 'Q', 'K'):
             pieces = self.boardObj.bitboards[type]
@@ -78,22 +69,17 @@ class AI:
 
                 if type == 'P':
                     whiteMaterial += 1
-                    pieces ^= 0b1 << index 
                 elif type == 'N':
                     whiteMaterial += 3
-                    pieces ^= 0b1 << index
                 elif type == 'B':
                     whiteMaterial += 3
-                    pieces ^= 0b1 << index
                 elif type == 'R':
                     whiteMaterial += 5
-                    pieces ^= 0b1 << index
                 elif type == 'Q':
                     whiteMaterial += 9
-                    pieces ^= 0b1 << index
                 else:
                     whiteMaterial += 200
-                    pieces ^= 0b1 << index
+                pieces &= pieces - 1
 
         return blackMaterial, whiteMaterial, blackMobility, whiteMobility
     
@@ -104,10 +90,9 @@ class AI:
             index = self.boardObj.bitboard2Index(pieces)
             possibleMoves = self.boardObj.legalMoves(index)
             while possibleMoves > 0:
-                move = self.boardObj.bitboard2Index(possibleMoves)
-                self.legalMoves.append((index, move))
-                possibleMoves ^= 0b1 << move
-            pieces ^= 0b1 << index
+                self.legalMoves.append((index, self.boardObj.bitboard2Index(possibleMoves)))
+                possibleMoves &= possibleMoves - 1
+            pieces &= pieces - 1
 
     # Check all legal moves for their score using Minimax, and return the best score
     #def minimax():
@@ -158,4 +143,21 @@ class AI:
     #    return best
 
 ai = AI()
-print(ai.evaluate(12, 28, False))
+
+def func(x):
+    return "%.7f" % x
+
+pstats.f8 = func
+cProfile.run("ai.evaluate(12, 28, False)")
+
+cProfile.run("ai.getMoves()")
+
+
+'''ai.boardObj.printBitboard(0x007E010101010100)
+print("      *")
+ai.boardObj.printBitboard(0x48FFFE99FECFAA00)
+print("      =")
+num = 0x007E010101010100*0x48FFFE99FECFAA00
+print(num >> 54)
+ai.boardObj.printBitboard((num >> 54))'''
+

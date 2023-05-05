@@ -479,7 +479,7 @@ class Board:
             enemyatkBb = self.attackedSquares(enemyatk)
 
             if(self.bitboards[king] & enemyatkBb):        #Checks if king is in check
-                legalBb = self.toggleBit(legalBb, end)
+                legalBb ^= 0b1 << end
 
             self.board[index] = prevBoardStart         # restoring board and piece bitboards to initial positions
             self.bitboards[self.board[index]]  = prevStartBb
@@ -642,7 +642,7 @@ class Board:
         attacked = 0b0
         while pieceBb > 0:
             index = self.bitboard2Index(pieceBb)
-            pieceBb = self.toggleBit(pieceBb, index)
+            pieceBb ^= 0b1 << index
             if 0b1 << index & self.bitboards['P']:
                 if index % 8 == 0:
                     attacked |= 0b1 << (index + 9)
