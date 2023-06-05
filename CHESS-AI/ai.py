@@ -1,4 +1,5 @@
 import chessboard as cb
+import random
 import cProfile
 import pstats
 import timeit
@@ -9,13 +10,13 @@ class AI:
 
         self.boardObj = cb.Board()
         self.boardObj.board2Bitboard()
-        self.legalMoves = []
+        self.isBlack = True
 
 
-    def evaluate(self, start, end, isBlack):
-        boardCopy = self.boardObj.board.copy()
-        bitboardsCopy = self.boardObj.bitboards.copy()
-        self.boardObj.makeMove(start, end)
+    def evaluate(self, isBlack):
+        king = self.boardObj.bitboard2Index(self.boardObj.bitboards['k']) if isBlack else self.boardObj.bitboard2Index(self.boardObj.bitboards['K'])
+        if self.boardObj.check(king, isBlack) == -1:
+            return 1000
         
         selfMaterial, enemyMaterial, selfMobility, enemyMobility = 0, 0, 0, 0
 
@@ -23,8 +24,6 @@ class AI:
             selfMaterial, enemyMaterial, selfMobility, enemyMobility = self.countMaterial()
         else:
             enemyMaterial, selfMaterial, enemyMobility, selfMobility = self.countMaterial()
-        self.boardObj.board = boardCopy
-        self.boardObj.bitboards = bitboardsCopy
 
         return selfMaterial - enemyMaterial + (selfMobility - enemyMobility)
     
@@ -84,63 +83,64 @@ class AI:
         return blackMaterial, whiteMaterial, blackMobility, whiteMobility
     
 
-    def getMoves(self):
-        pieces = self.boardObj.bitboards['white'] | self.boardObj.bitboards['black']
+    def getMoves(self, isBlack):
+        moves = []
+        pieces = self.boardObj.bitboards['black'] if isBlack else self.boardObj.bitboards['white']
         while pieces > 0:
             index = self.boardObj.bitboard2Index(pieces)
             possibleMoves = self.boardObj.legalMoves(index)
             while possibleMoves > 0:
-                self.legalMoves.append((index, self.boardObj.bitboard2Index(possibleMoves)))
+                moves.append((index, self.boardObj.bitboard2Index(possibleMoves)))
                 possibleMoves &= possibleMoves - 1
             pieces &= pieces - 1
+        return moves
 
-    # Check all legal moves for their score using Minimax, and return the best score
-    #def minimax():
-        #bestMove = -1  # bestMove is the index on the board that is the best move to make.
-        #bestScore = -math.inf  # bestScore is the score of the best move found so far
-        # Go over all possible moves and evaluate them using minimax
-        #for moves:  # Iterate through moves
-        #    if move is available:  # If the move is available, then check its value
-        #        newMove = bitboard of new move
-        #        score = value(newMove)
-        #        if score > bestScore:
-        #            bestScore = score
-        #            bestMove = move
-        #return bestMove
+    # Check all legal moves for their score and return the best move and score
+    def minimax(self, depth, aiTurn = True):
+        bestMove = -1
+        color = aiTurn and self.isBlack
+        moves = self.getMoves(color)
+        if depth == 0:
+            return (None, self.evaluate(color))
+        if aiTurn:
+            print('aiTurn')
+            bestScore = -float('inf')
+            for move in moves:
 
+                boardCopy = self.boardObj.board.copy()
+                bitboardsCopy = self.boardObj.bitboards.copy()
+                self.boardObj.makeMove(move[0], move[1])
 
-    # Return the score if the game is over, or returns either the min/max move based on which player went last
-    #def value():
-        # If a player is in checkmate, return the score.
-        #if checkWin()
-        #    return win state
-        # Recursively use minimax.
-        #elif aiWentLast:
-        #    return min()
-        #elif not aiWentLast:
-        #    return max()
+                score = self.minimax(depth - 1, not aiTurn)
+                if score[1] > bestScore:
+                    bestScore = score[1]
+                    bestMove = move
+                elif score[1] == bestScore:
+                    bestMove = random.choice((bestMove, move))
 
+                self.boardObj.board = boardCopy
+                self.boardObj.bitboards = bitboardsCopy
+        else:
+            print("not")
 
-    # Calculates the min continuation of the game using Minimax
-    #def min():
-    #    best = math.inf  # best is the best score found so far
-    #    for moves:  # Iterate through moves
-    #        if move is available:  # If the move is available, then check its value
-    #            newMove = bitboard of new move
-    #            score = value(newMove)
-    #            best = max(best, score)
-    #    return best
+            bestScore = float('inf')
+            for move in moves:  # Iterate through moves# If the move is available, then check its value
+                # newMove = bitboard of new move
 
+                boardCopy = self.boardObj.board.copy()
+                bitboardsCopy = self.boardObj.bitboards.copy()
+                self.boardObj.makeMove(move[0], move[1])
 
-    # Calculates the max continuation of the game using Minimax
-    #def max():
-    #    best = -math.inf  # best is the best score found so far
-    #    for moves:  # Iterate through moves
-    #        if move is available:  # If the move is available, then check its value
-    #            newMove = bitboard of new move
-    #            score = value(newMove)
-    #            best = max(best, score)
-    #    return best
+                score = self.minimax(depth - 1, not aiTurn)
+                if score[1] < bestScore:
+                    bestScore = score[1]
+                    bestMove = move
+                elif score[1] == bestScore:
+                    bestMove = random.choice((bestMove, move))
+
+                self.boardObj.board = boardCopy
+                self.boardObj.bitboards = bitboardsCopy
+        return (bestMove, bestScore)
 
 ai = AI()
 
@@ -148,16 +148,7 @@ def func(x):
     return "%.7f" % x
 
 pstats.f8 = func
-cProfile.run("ai.evaluate(12, 28, False)")
+#cProfile.run("ai.evaluate(12, 28, False)")
 
-cProfile.run("ai.getMoves()")
-
-
-'''ai.boardObj.printBitboard(0x007E010101010100)
-print("      *")
-ai.boardObj.printBitboard(0x48FFFE99FECFAA00)
-print("      =")
-num = 0x007E010101010100*0x48FFFE99FECFAA00
-print(num >> 54)
-ai.boardObj.printBitboard((num >> 54))'''
+#cProfile.run("ai.getMoves()")
 
