@@ -6,11 +6,11 @@ import timeit
 import time
 class AI:
 
-    def __init__(self):
+    def __init__(self, isBlack):
 
         self.boardObj = cb.Board()
         self.boardObj.board2Bitboard()
-        self.isBlack = True
+        self.isBlack = isBlack
 
 
     def evaluate(self, isBlack):
@@ -96,7 +96,7 @@ class AI:
         return moves
 
     # Check all legal moves for their score and return the best move and score
-    def minimax(self, depth, aiTurn = True):
+    def minimax(self, depth, alpha, beta, aiTurn = True):
         bestMove = -1
         color = aiTurn and self.isBlack
         moves = self.getMoves(color)
@@ -111,12 +111,15 @@ class AI:
                 bitboardsCopy = self.boardObj.bitboards.copy()
                 self.boardObj.makeMove(move[0], move[1])
 
-                score = self.minimax(depth - 1, not aiTurn)
+                score = self.minimax(depth - 1, alpha, beta, not aiTurn)
                 if score[1] > bestScore:
                     bestScore = score[1]
                     bestMove = move
                 elif score[1] == bestScore:
                     bestMove = random.choice((bestMove, move))
+                if bestScore > beta:
+                    break
+                alpha = max(bestScore, alpha)
 
                 self.boardObj.board = boardCopy
                 self.boardObj.bitboards = bitboardsCopy
@@ -131,18 +134,22 @@ class AI:
                 bitboardsCopy = self.boardObj.bitboards.copy()
                 self.boardObj.makeMove(move[0], move[1])
 
-                score = self.minimax(depth - 1, not aiTurn)
+                score = self.minimax(depth - 1, alpha, beta, not aiTurn)
                 if score[1] < bestScore:
                     bestScore = score[1]
                     bestMove = move
                 elif score[1] == bestScore:
                     bestMove = random.choice((bestMove, move))
 
+                if alpha < bestScore:
+                    break
+                beta = min(bestScore, beta)
+
                 self.boardObj.board = boardCopy
                 self.boardObj.bitboards = bitboardsCopy
         return (bestMove, bestScore)
 
-ai = AI()
+#ai = AI(False)
 
 def func(x):
     return "%.7f" % x
@@ -151,4 +158,6 @@ pstats.f8 = func
 #cProfile.run("ai.evaluate(12, 28, False)")
 
 #cProfile.run("ai.getMoves()")
+
+#cProfile.run("ai.minimax(2, -float('inf'), float('inf'))")
 

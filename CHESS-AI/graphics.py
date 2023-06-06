@@ -31,7 +31,7 @@ class GUI:
 
         self.whitePOV = whitePOV
         self.boardObj = cb.Board()
-        self.ai = ai.AI()
+        self.ai = ai.AI(whitePOV)
         self.boardObj.board2Bitboard()
         self.selected = None
         self.legalMoves = []
@@ -44,7 +44,7 @@ class GUI:
         self.renderGameInfo()
         while run:
             if not self.whitePOV and self.whitesTurn or self.whitePOV and not self.whitesTurn:
-                        move = self.ai.minimax(2)[0]
+                        move = self.ai.minimax(2, -float('inf'), float('inf'))[0]
                         self.ai.boardObj.makeMove(move[0], move[1])
                         self.makeMove(move[0], move[1])
                         self.whitesTurn = not self.whitesTurn
