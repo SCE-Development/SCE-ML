@@ -25,7 +25,7 @@ class AI:
         else:
             enemyMaterial, selfMaterial, enemyMobility, selfMobility = self.countMaterial()
 
-        return selfMaterial - enemyMaterial + (selfMobility - enemyMobility)
+        return selfMaterial - enemyMaterial + (selfMobility - enemyMobility)//2
     
     
     def countMaterial(self):
@@ -87,19 +87,40 @@ class AI:
         moves = []
         pieces = self.boardObj.bitboards['black'] if isBlack else self.boardObj.bitboards['white']
         while pieces > 0:
+            order = 0
             index = self.boardObj.bitboard2Index(pieces)
+            if index & self.boardObj.bitboards['q'] | self.boardObj.bitboards['Q']:
+                order = 9
+            elif index & self.boardObj.bitboards['r'] | self.boardObj.bitboards['R']:
+                order = 5
+            elif index & self.boardObj.bitboards['n'] | self.boardObj.bitboards['N']:
+                order = 7
+            elif index & self.boardObj.bitboards['b'] | self.boardObj.bitboards['B']:
+                order = 3
+            else:
+                order = 1
             possibleMoves = self.boardObj.legalMoves(index)
             while possibleMoves > 0:
-                moves.append((index, self.boardObj.bitboard2Index(possibleMoves)))
+                end = self.boardObj.bitboard2Index(possibleMoves)
+                if index & self.boardObj.bitboards['q'] | self.boardObj.bitboards['Q']:
+                    order += 9
+                elif index & self.boardObj.bitboards['r'] | self.boardObj.bitboards['R']:
+                    order += 5
+                elif index & self.boardObj.bitboards['n'] | self.boardObj.bitboards['N']:
+                    order += 3
+                elif index & self.boardObj.bitboards['b'] | self.boardObj.bitboards['B']:
+                    order += 3
+                moves.append((order, (index, end)))
                 possibleMoves &= possibleMoves - 1
             pieces &= pieces - 1
         return moves
 
     # Check all legal moves for their score and return the best move and score
-    def minimax(self, depth, alpha, beta, aiTurn = True):
+    def minimax(self, depth, alpha, beta, aiTurn=True):
         bestMove = -1
         color = aiTurn and self.isBlack
-        moves = self.getMoves(color)
+        moves = sorted(self.getMoves(color), reverse=True)
+
         if depth == 0:
             return (None, self.evaluate(color))
         if aiTurn:
@@ -109,15 +130,16 @@ class AI:
 
                 boardCopy = self.boardObj.board.copy()
                 bitboardsCopy = self.boardObj.bitboards.copy()
-                self.boardObj.makeMove(move[0], move[1])
+                self.boardObj.makeMove(move[1][0], move[1][1])
 
                 score = self.minimax(depth - 1, alpha, beta, not aiTurn)
                 if score[1] > bestScore:
                     bestScore = score[1]
-                    bestMove = move
+                    bestMove = move[1]
                 elif score[1] == bestScore:
-                    bestMove = random.choice((bestMove, move))
+                    bestMove = random.choice((bestMove, move[1]))
                 if bestScore > beta:
+                    print('prune')
                     break
                 alpha = max(bestScore, alpha)
 
@@ -132,16 +154,17 @@ class AI:
 
                 boardCopy = self.boardObj.board.copy()
                 bitboardsCopy = self.boardObj.bitboards.copy()
-                self.boardObj.makeMove(move[0], move[1])
+                self.boardObj.makeMove(move[1][0], move[1][1])
 
                 score = self.minimax(depth - 1, alpha, beta, not aiTurn)
                 if score[1] < bestScore:
                     bestScore = score[1]
-                    bestMove = move
+                    bestMove = move[1]
                 elif score[1] == bestScore:
-                    bestMove = random.choice((bestMove, move))
+                    bestMove = random.choice((bestMove, move[1]))
 
                 if alpha < bestScore:
+                    print("prune")
                     break
                 beta = min(bestScore, beta)
 
@@ -159,5 +182,5 @@ pstats.f8 = func
 
 #cProfile.run("ai.getMoves()")
 
-#cProfile.run("ai.minimax(2, -float('inf'), float('inf'))")
+#cProfile.run("ai.minimax(3, -float('inf'), float('inf'))")
 

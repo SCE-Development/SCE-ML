@@ -44,7 +44,7 @@ class GUI:
         self.renderGameInfo()
         while run:
             if not self.whitePOV and self.whitesTurn or self.whitePOV and not self.whitesTurn:
-                        move = self.ai.minimax(2, -float('inf'), float('inf'))[0]
+                        move = self.ai.minimax(3, -float('inf'), float('inf'))[0]
                         self.ai.boardObj.makeMove(move[0], move[1])
                         self.makeMove(move[0], move[1])
                         self.whitesTurn = not self.whitesTurn
