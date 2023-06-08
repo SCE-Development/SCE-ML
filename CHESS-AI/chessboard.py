@@ -515,6 +515,13 @@ class Board:
                     didEnpassant = 1
             elif prevEndPiece != ".":
                 prevEndPieceBb = self.bitboards[self.board[end]]
+            
+            if end // 8 == 0 and 0b1 << index & self.bitboards['p']:
+                previousQueenBb = self.bitboards['q']
+            elif end // 8 == 7 and 0b1 << index & self.bitboards['P']:
+                previousQueenBb = self.bitboards['Q']
+
+        
 
             self.makeMove(index, end, True)
 
