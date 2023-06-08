@@ -390,7 +390,6 @@ class Board:
         rightRay = occupancyBb & atk_mask - pieceBb
         leftRay = self.bitSwap(rightRay)
         rightRay = (rightRay - pieceBb)
-        print(rightRay)
         leftRay = leftRay - self.bitSwap(pieceBb)
         horizontalRays = rightRay ^ self.bitSwap(leftRay)
         horizontalRays = horizontalRays & atk_mask
@@ -462,6 +461,8 @@ class Board:
                 'R'] | self.bitboards['Q'] | self.bitboards['P'] | self.bitboards["K"]
             self.bitboards["black"] = self.bitboards['b'] | self.bitboards['n'] | self.bitboards[
                 'r'] | self.bitboards['q'] | self.bitboards['p'] | self.bitboards['k']
+            self.bitboards['whiteatk'] = self.attackedSquares("white")
+            self.bitboards['blackatk'] = self.attackedSquares("black")
             return True
         else:
             print("Not a valid move")
@@ -495,6 +496,8 @@ class Board:
             prevEndPiece = self.board[end]
             prevWhiteBb = self.bitboards["white"]
             prevBlackBb = self.bitboards["black"]
+            prevWhiteAtk = self.bitboards['whiteatk']
+            prevBlackAtk = self.bitboards['blackatk']
             prevBlackEnpassant = self.blackEnpassant
             prevWhiteEnpassant = self.whiteEnpassant
             didEnpassant = 0 # 0 for no, 1 for white, -1 for black
@@ -538,6 +541,8 @@ class Board:
                 self.bitboards[end] = 0
             self.bitboards["white"] = prevWhiteBb
             self.bitboards["black"] = prevBlackBb
+            self.bitboards['whiteatk'] = prevWhiteAtk
+            self.bitboards['blackatk'] = prevBlackAtk
             self.blackEnpassant = prevBlackEnpassant
             self.whiteEnpassant = prevWhiteEnpassant
             tempBb = self.toggleBit(tempBb, end)
