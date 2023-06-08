@@ -1,5 +1,6 @@
 import pygame
 import chessboard as cb
+import ai
 import math
 
 
@@ -30,6 +31,7 @@ class GUI:
 
         self.whitePOV = whitePOV
         self.boardObj = cb.Board()
+        self.ai = ai.AI(whitePOV)
         self.boardObj.board2Bitboard()
         self.selected = None
         self.legalMoves = []
@@ -41,6 +43,12 @@ class GUI:
         self.updateScreen()
         self.renderGameInfo()
         while run:
+            if not self.whitePOV and self.whitesTurn or self.whitePOV and not self.whitesTurn:
+                        move = self.ai.minimax(2, -float('inf'), float('inf'))[0]
+                        self.ai.boardObj.makeMove(move[0], move[1])
+                        self.makeMove(move[0], move[1])
+                        self.whitesTurn = not self.whitesTurn
+                        self.renderGameInfo()
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:  # exit button on top right
                     run = False
@@ -52,17 +60,11 @@ class GUI:
                         self.selected = None
                         self.legalMoves = None
                         continue
-                    if self.isMakingMove(index):
+
+                    elif self.isMakingMove(index):
                         self.makeMove(self.selected, index)
+                        self.ai.boardObj.makeMove(self.selected, index)
                         self.whitesTurn = not self.whitesTurn
-                        print('white queen')
-                        self.boardObj.printBitboard(self.boardObj.bitboards['Q'])
-                        print('black queen')
-                        self.boardObj.printBitboard(self.boardObj.bitboards['q'])
-                        print("white")
-                        self.boardObj.printBitboard(self.boardObj.bitboards['white'])
-                        print("black")
-                        self.boardObj.printBitboard(self.boardObj.bitboards['black'])
                         self.renderGameInfo()
                     else:
                         self.selectTile(index)
@@ -179,13 +181,14 @@ class GUI:
             self.boardObj.legalMoves(index))
         self.selected = index
 
-        for l in self.legalMoves:
-            radius = self.TILESIZE // 6
-            circleX, circleY = self.coords[l]
-            circleX += (self.TILESIZE // 2)
-            circleY += (self.TILESIZE // 2)
-            pygame.draw.circle(self.WIN, DARKSELECT,
-                               (circleX, circleY), radius)
+        if self.whitesTurn and self.boardObj.board[self.selected].isupper() or not self.whitesTurn and self.boardObj.board[self.selected].islower():
+            for l in self.legalMoves:
+                radius = self.TILESIZE // 6
+                circleX, circleY = self.coords[l]
+                circleX += (self.TILESIZE // 2)
+                circleY += (self.TILESIZE // 2)
+                pygame.draw.circle(self.WIN, DARKSELECT,
+                                (circleX, circleY), radius)
 
         pygame.display.update()
 
